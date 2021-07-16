@@ -1,15 +1,21 @@
 {
-	"name": "vscode-zhihu",
-	"displayName": "Zhihu On VSCode",
-	"description": "Zhihu VSCode Extension",
-	"version": "0.4.0",
-	"publisher": "niudai",
+	"name": "wpls",
+	"displayName": "WPL/s - Zhihu Write Publish Loop w/ statistic",
+	"description": "Write & publish zhihu articles in VS Code",
+	"version": "0.0.1",
+	"publisher": "jks-liu",
+	"license": "MIT",
 	"enableProposedApi": false,
 	"engines": {
 		"vscode": "^1.41.0"
 	},
+	"keywords": [
+		"zhihu",
+		"feed",
+		"writing"
+	],
 	"categories": [
-		"Other"
+		"Notebooks"
 	],
 	"activationEvents": [
 		"onCommand:zhihu.refreshFeed",
@@ -32,14 +38,9 @@
 		"onView:zhihu-explorer",
 		"onLanguage:markdown"
 	],
-	"keywords": [
-		"zhihu",
-		"feed",
-		"entertainment"
-	],
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/niudai/VSCode-Zhihu"
+		"url": "https://github.com/jks-liu/WPL-s"
 	},
 	"icon": "res/media/extension.png",
 	"main": "./dist/extension.js",
