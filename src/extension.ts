@@ -3,6 +3,7 @@
 import * as fs from "fs";
 import * as MarkdownIt from "markdown-it";
 import * as markdown_it_zhihu from "markdown-it-zhihu";
+import * as emoji from "markdown-it-emoji";
 import * as path from "path";
 import { CookieJar } from "tough-cookie";
 import * as FileCookieStore from "tough-cookie-filestore";
@@ -35,7 +36,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	setContext(context);
 	// Dependency Injection
 	showReleaseNote()
-	const zhihuMdParser = new MarkdownIt({ html: true }).use(markdown_it_zhihu);
+	const zhihuMdParser = new MarkdownIt({ html: true }).use(markdown_it_zhihu).use(emoji);
 	const defualtMdParser = new MarkdownIt();
 	const accountService = new AccountService();
 	const profileService = new ProfileService(accountService);
