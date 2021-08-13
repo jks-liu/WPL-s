@@ -4,6 +4,8 @@ Write-Publish-Loop w/ statistic.
 
 This code is based on <https://github.com/niudai/VSCode-Zhihu> by 牛岱 under MIT license. That repo seems no longer maintained, so I will continue work here.
 
+Project icon is from [Google Material icons](https://fonts.google.com/icons?icon.query=coffee) licensed under [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)
+
 # Development & contribute
 
 ## Notes & useful link
