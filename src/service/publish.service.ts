@@ -107,6 +107,26 @@ export class PublishService {
 			return Promise.resolve(pipePromise);
 		})
 		await pipePromise;
+
+		// support table
+		// <p><br></p>
+		// <table data-draft-node="block" data-draft-type="table" data-size="normal"><tbody>
+		// 	    <tr><th>头左</th><th>头右</th></tr>
+		//      <tr><td>数据左</td><td>数据又</td></tr>
+		// </tbody></table>
+		// <p><br></p>
+		this.zhihuMdParser.renderer.rules.table_open = function(tokens, options, env) {
+			return '<table data-draft-node="block" data-draft-type="table" data-size="normal"><tbody>';
+		}
+		this.zhihuMdParser.renderer.rules.table_close = function(tokens, options, env) {
+			return '</tbody></table>';
+		}
+		this.zhihuMdParser.renderer.rules.thead_open = function(tokens, options, env) { return ''; }
+		this.zhihuMdParser.renderer.rules.thead_close = function(tokens, options, env) { return ''; }
+		this.zhihuMdParser.renderer.rules.tbody_open = function(tokens, options, env) { return ''; }
+		this.zhihuMdParser.renderer.rules.tbody_close = function(tokens, options, env) { return ''; }
+
+
 		
 		let html = this.zhihuMdParser.renderer.render(tokens, {}, {});
 		const openIndex = tokens.findIndex(t => t.type == 'heading_open' && t.tag == 'h1');
