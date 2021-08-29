@@ -11,7 +11,7 @@
     </tr>
     <tr>
       <td>数据左</td>
-      <td>数据又</td>
+      <td>数据右</td>
     </tr>
   </tbody>
 </table>
