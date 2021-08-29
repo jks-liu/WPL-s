@@ -22,39 +22,41 @@
 
 | Markdown功能 | 支持与否 |
 | :--- | :--- |
-| 标题 | :+1: *1 |
-| 分割线 | :+1: |
-| 引用 | :+1: |
-| 链接 | :+1: |
-| 图片 | :+1: |
-| 表格 | :+1: *2 |
-| 公式 | :+1: |
-| 代码块 | :+1: |
-| 加粗 | :+1: |
-| 斜体 | :+1: |
-| 加粗斜体嵌套 | :+1: |
+| 标题 | :heavy_check_mark: *1 |
+| 分割线 | :heavy_check_mark: |
+| 引用 | :heavy_check_mark: |
+| 链接 | :heavy_check_mark: |
+| 图片 | :heavy_check_mark: |
+| 表格 | :heavy_check_mark: *2 |
+| 公式 | :heavy_check_mark: |
+| 代码块 | :heavy_check_mark: |
+| 加粗 | :heavy_check_mark: |
+| 斜体 | :heavy_check_mark: |
+| 加粗斜体嵌套 | :heavy_check_mark: |
 | 删除线 | :x: |
-| 列表 | :+1: |
+| 列表 | :heavy_check_mark: |
 | 参考文献 | :x: |
 | 任务列表 | :x: |
-| Emoji表情 | :+1: *3 |
+| Emoji表情 | :heavy_check_mark: *3 |
 
 1. 最多可支持4级标题
 2. 表格暂时不支持对齐
-3. 支持大部分Emoji，具体列表请查看上面的链接。
+3. 支持大部分Emoji（很多emoji刚发的时候可以看到，但一段时间过后就会被知乎过滤掉），具体列表请查看上面的链接。
 
 
 | 知乎特色功能 | 支持与否 |
 | --- | --- |
-| 回答问题 | :+1: |
-| 发布文章 | :+1: |
-| 题图 | :+1: |
-| 链接卡片 | :+1: |
+| 回答问题 | :heavy_check_mark: |
+| 发布文章 | :heavy_check_mark: |
+| 题图 | :heavy_check_mark: |
+| 链接卡片 | :x: |
 | 视频 | :x: |
 | 好物推荐 | :x: |
 | 附件 | :x: |
 | 标签 | :x: |
 | 草稿 | :x: |
+| 赞赏 | :x: |
+| 追更 | :x: |
 
 # 使用方法
 

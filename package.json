@@ -377,7 +377,7 @@
 		"markdown-it": "^12.1.0",
 		"markdown-it-emoji": "^2.0.0",
 		"markdown-it-katex": "^2.0.3",
-		"markdown-it-zhihu": "^2.0.10",
+		"markdown-it-zhihu-common": "^1.0.0",
 		"md5": "^2.2.1",
 		"on-change": "^1.6.2",
 		"pug": "^2.0.4",
@@ -385,7 +385,6 @@
 		"request-promise": "^4.2.5",
 		"tough-cookie": "^3.0.1",
 		"tough-cookie-filestore": "0.0.1",
-		"zhihu-encrypt": "^1.0.0",
-		"zhihu-markdown": "^1.0.3"
+		"zhihu-encrypt": "^1.0.0"
 	}
 }

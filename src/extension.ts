@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 import * as MarkdownIt from "markdown-it";
-import * as markdown_it_zhihu from "markdown-it-zhihu";
+import markdown_it_zhihu from "markdown-it-zhihu-common";
 import * as emoji from "markdown-it-emoji";
 import * as path from "path";
 import { CookieJar } from "tough-cookie";

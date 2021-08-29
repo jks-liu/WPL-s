@@ -94,7 +94,7 @@ export class PublishService {
 		// get rid of shebang line
 		if (url) text = text.slice(text.indexOf('\n') + 1);
 
-		text = text + "\n\n>本文使用 [WPL/s](https://github.com/jks-liu/WPL-s) 发布";
+		text = text + "\n\n>本文使用 [WPL/s](https://zhuanlan.zhihu.com/p/390528313) 发布 [@GitHub](https://github.com/jks-liu/WPL-s)";
 		// let html = this.zhihuMdParser.render(text);
 		let tokens = this.zhihuMdParser.parse(text, {});
 		// convert local and outer link to zhihu link
@@ -107,25 +107,6 @@ export class PublishService {
 			return Promise.resolve(pipePromise);
 		})
 		await pipePromise;
-
-		// support table
-		// <p><br></p>
-		// <table data-draft-node="block" data-draft-type="table" data-size="normal"><tbody>
-		// 	    <tr><th>头左</th><th>头右</th></tr>
-		//      <tr><td>数据左</td><td>数据又</td></tr>
-		// </tbody></table>
-		// <p><br></p>
-		this.zhihuMdParser.renderer.rules.table_open = function(tokens, options, env) {
-			return '<table data-draft-node="block" data-draft-type="table" data-size="normal"><tbody>';
-		}
-		this.zhihuMdParser.renderer.rules.table_close = function(tokens, options, env) {
-			return '</tbody></table>';
-		}
-		this.zhihuMdParser.renderer.rules.thead_open = function(tokens, options, env) { return ''; }
-		this.zhihuMdParser.renderer.rules.thead_close = function(tokens, options, env) { return ''; }
-		this.zhihuMdParser.renderer.rules.tbody_open = function(tokens, options, env) { return ''; }
-		this.zhihuMdParser.renderer.rules.tbody_close = function(tokens, options, env) { return ''; }
-
 
 		
 		let html = this.zhihuMdParser.renderer.render(tokens, {}, {});

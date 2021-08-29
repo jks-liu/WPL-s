@@ -1,5 +1,5 @@
 const MarkdownIt = require('markdown-it');
-const markdown_it_zhihu = require('markdown-it-zhihu');
+const markdown_it_zhihu = require('markdown-it-zhihu-common');
 const fs = require('fs');
 const path = require('path');
 
