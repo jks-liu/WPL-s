@@ -1,7 +1,10 @@
-
 ![在VS Code中搜索`zhihu`](./res/media/vs-code-extension-search-zhihu-this.png)
 
-# WPL/s v0.2.1发布 - 支持表格、Emoji - 让你在VS Code中编写发布知乎文章及回答问题
+# WPL/s v0.3.0发布 - 支持任务列表 - 让你在VS Code中编写发布知乎文章及回答问题
+- [ ] 未完成的任务
+- [x] 已完成的任务
+    - [ ] 嵌套未完成的任务
+    - [x] 嵌套已完成的任务
 
 # WPL/s - 让你在VS Code中编写发布知乎文章及回答问题
 
@@ -35,8 +38,8 @@
 | 加粗斜体嵌套 | :heavy_check_mark: |
 | 删除线 | :x: |
 | 列表 | :heavy_check_mark: |
+| 任务列表 | :heavy_check_mark: |
 | 参考文献 | :x: |
-| 任务列表 | :x: |
 | Emoji表情 | :heavy_check_mark: *3 |
 
 1. 最多可支持4级标题
