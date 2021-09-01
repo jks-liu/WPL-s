@@ -2,7 +2,7 @@
 	"name": "wpls",
 	"displayName": "WPL/s - Zhihu Write Publish Loop w/ statistic",
 	"description": "Write & publish zhihu articles in VS Code",
-	"version": "0.3.0",
+	"version": "0.4.0",
 	"publisher": "jks-liu",
 	"license": "MIT",
 	"enableProposedApi": false,

@@ -60,3 +60,39 @@ POST https://zhuanlan.zhihu.com/api/articles/101553734/topics
   "id": "21672344"
 }
 ```
+
+# 参考文献
+
+```html
+<p>
+  <sup
+    data-text="百度"
+    data-url="https://baidu.com"
+    data-draft-node="inline"
+    data-draft-type="reference"
+    data-numero="1"
+    >[1]</sup
+  >
+</p>
+<p>
+  <sup
+    data-text="百度"
+    data-url="https://baidu.com"
+    data-draft-node="inline"
+    data-draft-type="reference"
+    data-numero="1"
+    >[1]</sup
+  >
+</p>
+<p>
+  <sup
+    data-text="Google"
+    data-url="https://google.com"
+    data-draft-node="inline"
+    data-draft-type="reference"
+    data-numero="2"
+    >[2]</sup
+  >
+</p>
+<p><br /></p>
+```
