@@ -376,6 +376,7 @@
 		"form-urlencoded": "^4.1.1",
 		"markdown-it": "^12.1.0",
 		"markdown-it-katex": "^2.0.3",
+		"markdown-it-meta": "^0.0.1",
 		"markdown-it-zhihu-common": "^1.0.0",
 		"md5": "^2.2.1",
 		"on-change": "^1.6.2",
