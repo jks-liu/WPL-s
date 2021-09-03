@@ -63,26 +63,6 @@ export class PublishService {
 		})
 	}
 
-	preview(textEdtior: vscode.TextEditor, edit: vscode.TextEditorEdit) {
-		let text = textEdtior.document.getText();
-		const url: URL = this.shebangParser(text);
-		// get rid of shebang line
-		if (url) text = text.slice(text.indexOf('\n') + 1);
-		const html = this.zhihuMdParser.render(text);
-		this.webviewService.renderHtml({
-			title: '预览',
-			pugTemplatePath: join(getExtensionPath(), TemplatePath, 'pre-publish.pug'),
-			pugObjects: {
-				title: '答案预览',
-				content: html
-			},
-			showOptions: {
-				viewColumn: vscode.ViewColumn.Beside,
-				preserveFocus: true
-			}
-		});
-	}
-
 	async publish(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit) {
 		const text = textEditor.document.getText();
 		// text = text + "\n\n>本文使用 [WPL/s](https://zhuanlan.zhihu.com/p/390528313) 发布 [@GitHub](https://github.com/jks-liu/WPL-s)";

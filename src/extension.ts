@@ -88,9 +88,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.commands.registerTextEditorCommand('zhihu.publish', (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit) => {
 		publishService.publish(textEditor, edit);
 	})
-	vscode.commands.registerTextEditorCommand('zhihu.preview', (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit) => {
-		vscode.commands.executeCommand('markdown.showPreviewToSide');
-	})
 	vscode.commands.registerCommand('zhihu.uploadImageFromClipboard', async () => {
 		pasteService.uploadImageFromClipboard()
 	})

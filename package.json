@@ -24,7 +24,6 @@
 		"onCommand:zhihu.openWebView",
 		"onCommand:zhihu.publish",
 		"onCommand:zhihu.jianshuPublish",
-		"onCommand:zhihu.preview",
 		"onCommand:zhihu.search",
 		"onCommand:zhihu.login",
 		"onCommand:zhihu.logout",
@@ -148,14 +147,6 @@
 				}
 			},
 			{
-				"command": "zhihu.preview",
-				"title": "Zhihu: Preview",
-				"icon": {
-					"light": "res/media/light/preview.svg",
-					"dark": "res/media/dark/preview.svg"
-				}
-			},
-			{
 				"command": "zhihu.uploadImageFromClipboard",
 				"title": "Zhihu: Paste Image From Clipboard"
 			},
@@ -225,11 +216,6 @@
 					"group": "zhihu@0"
 				},
 				{
-					"command": "zhihu.preview",
-					"when": "resourceLangId == markdown",
-					"group": "zhihu@1"
-				},
-				{
 					"command": "zhihu.uploadImageFromExplorer",
 					"when": "resourceLangId == markdown",
 					"group": "zhihu@2"
@@ -240,11 +226,6 @@
 					"command": "zhihu.publish",
 					"when": "resourceLangId == markdown",
 					"group": "navigation@0"
-				},
-				{
-					"command": "zhihu.preview",
-					"when": "resourceLangId == markdown",
-					"group": "navigation@1"
 				}
 			],
 			"explorer/context": [

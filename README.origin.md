@@ -107,10 +107,7 @@ ___
 ## 🖍 内容创作
 <a name = "write"></a>
 
-新建一个后缀名为`.md`的文件，若不需要数学公式，只需要按照你最熟悉的 Markdown 语法写即可，右键点击 `Zhihu: Preview` 可预览答案:
-
-<p align="center">
-<img src="https://raw.githubusercontent.com/niudai/ImageHost/master/zhihu/preview.gif" style="box-shadow: 2px 2px 8px 0px #5dd8fd;border-radius: 6px;"/></p>
+新建一个后缀名为`.md`的文件，若不需要数学公式，只需要按照你最熟悉的 Markdown 语法写即可。
 
 ### Latex 语法支持
 
@@ -313,7 +310,7 @@ $$
 <p align="center">
 <img src="https://raw.githubusercontent.com/niudai/ImageHost/master/zhihu/2020-02-08-20-02-37.png" style="box-shadow: 2px 2px 8px 0px #5dd8fd;border-radius: 6px;"/></p>
 
-左侧的为 `Zhihu: Publish`（发布答案），右侧的为 `Zhihu: Preview` (预览答案)。
+左侧的为 `Zhihu: Publish`（发布答案），右侧已删除。
 
 ## ⌨ 快捷键
 
