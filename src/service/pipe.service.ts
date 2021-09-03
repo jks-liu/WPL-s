@@ -16,8 +16,8 @@ export class PipeService {
 	 * @param tokens 
 	 */
 	public async sanitizeMdTokens(tokens: Token[]): Promise<Token[]> {
-		let images = this.findCorsImage(tokens);
-		for (let img of images) {
+		const images = this.findCorsImage(tokens);
+		for (const img of images) {
 			img.attrs[0][1] = await this.pasteService.uploadImageFromLink(img.attrs[0][1]);
 		}
 		return Promise.resolve(tokens);
@@ -34,7 +34,7 @@ export class PipeService {
 		if (token.type == 'image') {
 			if (!ZhihuPicReg.test(token.attrs[0][1]))
 				images.push(token);
-		};
+		}
 		if (token.children) {
 			token.children.forEach(t => images = images.concat(this._findCorsImage(t)))
 		}

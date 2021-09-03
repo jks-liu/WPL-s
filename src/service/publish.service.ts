@@ -8,7 +8,6 @@ import { AnswerAPI, AnswerURL, QuestionAPI, ZhuanlanAPI, ZhuanlanURL } from "../
 import { PostAnswer } from "../model/publish/answer.model";
 import { IColumn } from "../model/publish/column.model";
 import { IProfile, ITarget, ITopicTarget } from "../model/target/target";
-import { beautifyDate, removeHtmlTag } from "../util/md-html-utils";
 import { CollectionService, ICollectionItem } from "./collection.service";
 import { EventService } from "./event.service";
 import { HttpService, sendRequest } from "./http.service";
@@ -55,7 +54,7 @@ export class PublishService {
 	 * this is what pre-log tech comes in. 
 	 */
 	private registerPublishEvents() {
-		let events = this.eventService.getEvents();
+		const events = this.eventService.getEvents();
 		events.forEach(e => {
 			e.timeoutId = setTimeout(() => {
 				this.postArticle(e.content, e.title);
@@ -66,10 +65,10 @@ export class PublishService {
 
 	preview(textEdtior: vscode.TextEditor, edit: vscode.TextEditorEdit) {
 		let text = textEdtior.document.getText();
-		let url: URL = this.shebangParser(text);
+		const url: URL = this.shebangParser(text);
 		// get rid of shebang line
 		if (url) text = text.slice(text.indexOf('\n') + 1);
-		let html = this.zhihuMdParser.render(text);
+		const html = this.zhihuMdParser.render(text);
 		this.webviewService.renderHtml({
 			title: '预览',
 			pugTemplatePath: join(getExtensionPath(), TemplatePath, 'pre-publish.pug'),
@@ -84,136 +83,96 @@ export class PublishService {
 		});
 	}
 
-	async publish(textEdtior: vscode.TextEditor, edit: vscode.TextEditorEdit) {
-		let title: string;
-		let titleImage: string;
-		let bgIndex: number;
-		let text = textEdtior.document.getText();
-		const url: URL = this.shebangParser(text);
-		const timeObject: TimeObject = { hour: 0, date: new Date(), minute: 0 };
-		// get rid of shebang line
-		if (url) text = text.slice(text.indexOf('\n') + 1);
+	async publish(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit) {
+		const text = textEditor.document.getText();
+		// text = text + "\n\n>本文使用 [WPL/s](https://zhuanlan.zhihu.com/p/390528313) 发布 [@GitHub](https://github.com/jks-liu/WPL-s)";
 
-		text = text + "\n\n>本文使用 [WPL/s](https://zhuanlan.zhihu.com/p/390528313) 发布 [@GitHub](https://github.com/jks-liu/WPL-s)";
-		// let html = this.zhihuMdParser.render(text);
-		let tokens = this.zhihuMdParser.parse(text, {});
+		/// Render markdown
+
+		// Running render on markdown without meta will return meta from the previous run
+		// Refer to https://github.com/CaliStyle/markdown-it-meta/issues/5
+		(this.zhihuMdParser as any).meta = undefined;
+		const tokens = this.zhihuMdParser.parse(text, {});
 		// convert local and outer link to zhihu link
-		let pipePromise = this.pipeService.sanitizeMdTokens(tokens);
+		const pipePromise = this.pipeService.sanitizeMdTokens(tokens);
 		vscode.window.withProgress({
 			location: vscode.ProgressLocation.Window,
 			cancellable: false,
-			title: '文章发布中...'
+			title: '图片上传中...'
 		}, (progress, token) => {
 			return Promise.resolve(pipePromise);
 		})
 		await pipePromise;
-
-		
-		let html = this.zhihuMdParser.renderer.render(tokens, {}, {});
-		const openIndex = tokens.findIndex(t => t.type == 'heading_open' && t.tag == 'h1');
-		const endIndex = tokens.findIndex(t => t.type == 'heading_close' && t.tag == 'h1');
-		if (openIndex >= 0) {
-			title = removeHtmlTag(this.zhihuMdParser.renderInline(tokens[openIndex+1].content));
-			for (let i = 0; i < openIndex; i++) {
-				if(tokens[i].type === 'inline') {
-					for (let c of tokens[i].children) {
-						if(c.type === 'image') {
-							let tmp = c.attrs.find(a => a[0] === 'src')
-							titleImage = tmp[1];
-							bgIndex = i;
-						}
-					}
-				}
-			}
+		const html = this.zhihuMdParser.renderer.render(tokens, {}, {});
+		const meta = (this.zhihuMdParser as any).meta;
+		console.log(typeof meta, meta, meta.title, meta.title === undefined, meta['zhihu-title']);
+	
+		/// Parse meta info
+		if (meta.title === undefined) {
+			vscode.window.showErrorMessage('请输入标题');
+			return;
 		}
 
-		const pubLater = await vscode.window.showQuickPick<vscode.QuickPickItem & { value: boolean }>(
-			[
-				{ label: '立即发布', description: '', value: false },
-				{ label: '稍后发布', description: '', value: true }
-			]
-		).then(item => item.value);
-
-		if (pubLater == undefined) return;
-
-		if (pubLater) {
-			let ClockReg = /^(\d\d?)[:：](\d\d)\s*([ap]m)\s*$/i
-			let timeStr: string | undefined = await vscode.window.showInputBox({
-				ignoreFocusOut: true,
-				prompt: "输入发布时间，如 5:30 pm, 6:40 am 等，目前只支持当天发布！",
-				placeHolder: "",
-				validateInput: (s: string) => {
-					if (!ClockReg.test(s)) return '请输入正确的时间格式！'
-					if (parseInt(s.replace(ClockReg, '$1')) > 12 || parseInt(s.replace(ClockReg, '$2')) > 60) return '请输入正确的时间格式！'
-					return ''
-				}
-			});
-			let h = parseInt(timeStr.replace(ClockReg, '$1')), m = parseInt(timeStr.replace(ClockReg, '$2')), aOrPm = timeStr.replace(ClockReg, '$3');
-			if (!timeStr) return;
-			timeStr = timeStr.trim();
-			/**
-			 * the time interval between now and the publish time in millisecs.
-			 */
-			timeObject.date.setHours(aOrPm == 'am' ? h : h + 12);
-			timeObject.date.setMinutes(m);
-			if (timeObject.date.getTime() < Date.now()) {
-				vscode.window.showWarningMessage('不能选择比现在更早的时间！');
-				return;
-			}
+		const title: string = meta.title;
+		let titleImage: string|undefined = meta['zhihu-title-image'];
+		const url: URL|undefined = meta['zhihu-url'] && new URL(meta['zhihu-url']);
+		if (titleImage !== undefined) {
+			titleImage = await this.pasteService.uploadImageFromLink(titleImage);
+			console.log('titleImage', titleImage);
 		}
 
-		if (url) { // If url is provided
+		/// Post article
+		if (url !== undefined) { // If url is provided
 			// just publish answer in terms of what shebang indicates
 			if (QuestionAnswerPathReg.test(url.pathname)) {
+				// Link like https://www.zhihu.com/question/481576477/answer/2085827970
 				// answer link, update answer
-				let aId = url.pathname.replace(QuestionAnswerPathReg, '$3');
+				const answerId = url.pathname.replace(QuestionAnswerPathReg, '$3');
 				if (!this.eventService.registerEvent({
 					content: html,
 					type: MediaTypes.article,
-					date: timeObject.date,
+					date: new Date(),
 					hash: md5(html),
 					handler: () => {
-						this.putAnswer(html, aId);
+						this.putAnswer(html, answerId);
 						this.eventService.destroyEvent(md5(html));
 					}
 				})) this.promptSameContentWarn()
-				else this.promptEventRegistedInfo(timeObject)
 			} else if (QuestionPathReg.test(url.pathname)) {
+				// Link like https://www.zhihu.com/question/481576477
 				// question link, post new answer
-				let qId = url.pathname.replace(QuestionPathReg, '$1');
+				const questionId = url.pathname.replace(QuestionPathReg, '$1');
 				if (!this.eventService.registerEvent({
 					content: html,
 					type: MediaTypes.question,
-					date: timeObject.date,
+					date: new Date(),
 					hash: md5(html),
 					handler: () => {
-						this.postAnswer(html, qId);
+						this.postAnswer(html, questionId);
 						this.eventService.destroyEvent(md5(html));
 					}
 				})) this.promptSameContentWarn()
-				else this.promptEventRegistedInfo(timeObject)
 			} else if (ArticlePathReg.test(url.pathname)) {
-				({ tokens, html } = this.removeTitleAndBgFromContent(tokens, openIndex, bgIndex, html));
-				let arId = url.pathname.replace(ArticlePathReg, '$1');
-				if (!title) {
-					title = await this._getTitle();
-				}
-				let column = await this._selectColumn();
+				// Link like https://zhuanlan.zhihu.com/p/390528313
+				const articleId = url.pathname.replace(ArticlePathReg, '$1');
+				// if (!title) {
+				// 	title = await this._getTitle();
+				// }
+				const column = await this._selectColumn();
 				if (!column) {
 					vscode.window
 				}
 				if (!this.eventService.registerEvent({
 					content: html,
 					type: MediaTypes.question,
-					date: timeObject.date,
+					date: new Date(),
 					title: title,
 					hash: md5(html),
 					handler: () => {
-						this.putArticle(html, arId, title, column, titleImage);
+						this.putArticle(html, articleId, title, column, titleImage);
 						this.eventService.destroyEvent(md5(html));
 					}
 				})) this.promptSameContentWarn()
-				else this.promptEventRegistedInfo(timeObject)
 			}
 		} else { // url is not provided
 			const selectFrom: MediaTypes = await vscode.window.showQuickPick<vscode.QuickPickItem & { value: MediaTypes }>(
@@ -224,50 +183,44 @@ export class PublishService {
 			).then(item => item.value);
 
 			if (selectFrom === MediaTypes.article) {
-				({ tokens, html } = this.removeTitleAndBgFromContent(tokens, openIndex, bgIndex, html));
-
 				// user select to publish new article
-				if (!title) {
-					title = await this._getTitle();					
-				}
-				let column = await this._selectColumn();
+				// if (!title) {
+				// 	title = await this._getTitle();					
+				// }
+				const column = await this._selectColumn();
 				if (!title) return;
 				if (!this.eventService.registerEvent({
 					content: html,
 					type: MediaTypes.article,
 					title,
-					date: timeObject.date,
+					date: new Date(),
 					hash: md5(html + title),
 					handler: () => {
 						this.postArticle(html, title, column, titleImage);
 						this.eventService.destroyEvent(md5(html + title));
 					}
 				})) this.promptSameContentWarn()
-				else this.promptEventRegistedInfo(timeObject)
+				// else this.promptEventRegistedInfo(timeObject)
 
 			} else if (selectFrom === MediaTypes.answer) {
 				// user select from collection
 				// shebang not found, then prompt a quick pick to select a question from collections
 				const selectedTarget: ICollectionItem | undefined = await vscode.window.showQuickPick<vscode.QuickPickItem & ICollectionItem>(
 					this.collectionService.getTargets(MediaTypes.question).then(
-						(targets) => {
-							let items = targets.map(t => ({ label: t.title ? t.title : t.excerpt, description: t.excerpt, id: t.id, type: t.type }));
-							return items;
-						}
+						(targets) => targets.map(t => ({ label: t.title ? t.title : t.excerpt, description: t.excerpt, id: t.id, type: t.type }))
 					)
 				).then(item => (item ? { id: item.id, type: item.type } : undefined));
 				if (!selectedTarget) return;
 				if (!this.eventService.registerEvent({
 					content: html,
 					type: MediaTypes.article,
-					date: timeObject.date,
+					date: new Date(),
 					hash: md5(html),
 					handler: () => {
 						this.postAnswer(html, selectedTarget.id);
 						this.eventService.destroyEvent(md5(html));
 					}
 				})) this.promptSameContentWarn();
-				else this.promptEventRegistedInfo(timeObject);
 			}
 		}
 	}
@@ -280,13 +233,6 @@ export class PublishService {
 
 	private _removeTitleAndBg(openIndex: number, bgIndex: number) {
 		return (t, i) => Math.abs(openIndex + 1 - i) > 1 && bgIndex != i;
-	}
-
-	private promptEventRegistedInfo(timeObject: TimeObject) {
-		if (timeObject.date.getTime() > Date.now()) {
-			vscode.window.showInformationMessage(`答案将在 ${beautifyDate(timeObject.date)} 发布，请发布时保证VSCode处于打开状态，并` +
-				`激活知乎插件`);
-		}
 	}
 
 	private promptSameContentWarn() {
@@ -337,7 +283,7 @@ export class PublishService {
 			headers: {},
 		}).then(resp => {
 			if (resp.statusCode === 200) {
-				let newUrl = `${AnswerURL}/${answerId}`;
+				const newUrl = `${AnswerURL}/${answerId}`;
 				this.promptSuccessMsg(newUrl);
 				const pane = vscode.window.createWebviewPanel('zhihu', 'zhihu', vscode.ViewColumn.One, { enableScripts: true, enableCommandUris: true, enableFindWidget: true });
 				sendRequest({ uri: `${AnswerURL}/${answerId}`, gzip: true }).then(
@@ -361,7 +307,7 @@ export class PublishService {
 			headers: {}
 		}).then(resp => {
 			if (resp.statusCode == 200) {
-				let newUrl = `${AnswerURL}/${resp.body.id}`;
+				const newUrl = `${AnswerURL}/${resp.body.id}`;
 				this.promptSuccessMsg(newUrl);
 				// const pane = vscode.window.createWebviewPanel('zhihu', 'zhihu', vscode.ViewColumn.One, { enableScripts: true, enableCommandUris: true, enableFindWidget: true });
 				// sendRequest({ uri: `${AnswerURL}/${resp.body.id}`, gzip: true }).then(
@@ -395,7 +341,7 @@ export class PublishService {
 		}
 		if (!title) return;
 
-		let postResp: ITarget = await sendRequest({
+		const postResp: ITarget = await sendRequest({
 			uri: `${ZhuanlanAPI}/drafts`,
 			json: true,
 			method: 'post',
@@ -425,7 +371,7 @@ export class PublishService {
 			headers: {}
 		})
 
-		let resp = await sendRequest({
+		const resp = await sendRequest({
 			uri: `${ZhuanlanAPI}/${postResp.id}/publish`,
 			json: true,
 			method: 'put',
@@ -468,7 +414,7 @@ export class PublishService {
 			headers: {}
 		})
 
-		let resp = await sendRequest({
+		const resp = await sendRequest({
 			uri: `${ZhuanlanAPI}/${articleId}/publish`,
 			json: true,
 			method: 'put',
@@ -491,13 +437,13 @@ export class PublishService {
 	}
 
 	shebangParser(text: string): URL {
-		let shebangRegExp = /#[!！]\s*((https?:\/\/)?(.+))$/i
+		const shebangRegExp = /#[!！]\s*((https?:\/\/)?(.+))$/i
 		let lf = text.indexOf('\n');
 		if (lf < 0) lf = text.length;
 		let link = text.slice(0, lf);
 		link = link.indexOf('\r') > 0 ? link.slice(0, link.length - 1) : link;
 		if (!shebangRegExp.test(link)) return undefined;
-		let url = new URL(link.replace(shebangRegExp, '$1'));
+		const url = new URL(link.replace(shebangRegExp, '$1'));
 		if (/^(\w)+\.zhihu\.com$/.test(url.host)) return url;
 		else return undefined;
 		// shebangRegExp = /(https?:\/\/)/i

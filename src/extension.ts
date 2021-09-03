@@ -3,9 +3,8 @@
 import * as fs from "fs";
 import * as MarkdownIt from "markdown-it";
 import markdown_it_zhihu from "markdown-it-zhihu-common";
+import * as meta from "markdown-it-meta"; // import meta from "markdown-it-meta"; not working why?
 import * as path from "path";
-import { CookieJar } from "tough-cookie";
-import * as FileCookieStore from "tough-cookie-filestore";
 import * as vscode from "vscode";
 import { AccountService } from "./service/account.service";
 import { AuthenticateService } from "./service/authenticate.service";
@@ -35,7 +34,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	setContext(context);
 	// Dependency Injection
 	showReleaseNote()
-	const zhihuMdParser = new MarkdownIt({ html: true }).use(markdown_it_zhihu);
+	const zhihuMdParser = new MarkdownIt({ html: true }).use(markdown_it_zhihu).use(meta);
 	const defualtMdParser = new MarkdownIt();
 	const accountService = new AccountService();
 	const profileService = new ProfileService(accountService);
