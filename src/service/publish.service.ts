@@ -87,7 +87,7 @@ export class PublishService {
 		if (!textEditor.document.lineAt(0).text.startsWith('---'))
 			return;
 
-		for (let i = 0; i < textEditor.document.lineCount; ++i) {
+		for (let i = 1; i < textEditor.document.lineCount; ++i) {
 			const line = textEditor.document.lineAt(i);
 			if (line.text.startsWith(`${key}:`)) {
 				textEditor.edit(e => {

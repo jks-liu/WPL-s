@@ -1,6 +1,8 @@
-![在VS Code中搜索`zhihu`](./res/media/vs-code-extension-search-zhihu-this.png)
+title: WPL/s v1.0.0发布 - 支持 Jekyll 元数据 - 让你在VS Code中编写发布知乎文章及回答问题
+---
+zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
+---
 
-# WPL/s v1.0.0发布 - 支持 Jekyll 元数据 - 让你在VS Code中编写发布知乎文章及回答问题
 元数据格式如下
 ```md
 ---
@@ -73,14 +75,7 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 1. 最多可支持4级标题
 2. 表格暂时不支持对齐
 3. 知乎本身不支持，请大家踊跃向[知乎小管家](https://www.zhihu.com/people/zhihuadmin)提意见
-4. 格式下一小节
-   ```md
-    用[^n]来引用。
-
-   [^n]: https://网址.com 说明文字
-
-   注意字符 ^ 不能少。冒号后面有一个空格。网址中不能有空格。网址和说明文字之间有一个空格，说明文字自己可以有空格。
-   ```
+4. 格式见下一小节
 5. 支持大部分Emoji（很多emoji刚发的时候可以看到，但一段时间过后就会被知乎过滤掉），具体列表请查看上面的链接。
 
 # 部分格式提醒
