@@ -1,5 +1,5 @@
-title: WPL/s v1.0.0发布 - 支持 Jekyll 元数据 - 让你在VS Code中编写发布知乎文章及回答问题
 ---
+title: WPL/s v1.0.0发布 - 支持 Jekyll 元数据 - 让你在VS Code中编写发布知乎文章及回答问题
 zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 ---
 

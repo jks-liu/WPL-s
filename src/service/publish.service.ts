@@ -80,7 +80,7 @@ export class PublishService {
 			return Promise.resolve(pipePromise);
 		})
 		await pipePromise;
-		return this.zhihuMdParser.renderer.render(tokens, {}, {});
+		return this.zhihuMdParser.renderer.render(tokens, {}, {}) + "\n" + this.zhihuMdParser.render("\n\n>本文使用 [WPL/s](https://zhuanlan.zhihu.com/p/390528313) 发布 [@GitHub](https://github.com/jks-liu/WPL-s)");
 	}
 
 	private addMeta(textEditor: vscode.TextEditor, key: string, value: string) {
