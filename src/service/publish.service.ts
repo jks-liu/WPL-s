@@ -1,36 +1,22 @@
-
-import { join } from "path";
 import * as vscode from "vscode";
 import { MediaTypes, SettingEnum } from "../const/ENUM";
-import { TemplatePath } from "../const/PATH";
-import { ArticlePathReg, QuestionAnswerPathReg, QuestionPathReg, ZhihuPicReg } from "../const/REG";
+import { ArticlePathReg, QuestionAnswerPathReg, QuestionPathReg } from "../const/REG";
 import { AnswerAPI, AnswerURL, QuestionAPI, ZhuanlanAPI, ZhuanlanURL } from "../const/URL";
 import { PostAnswer } from "../model/publish/answer.model";
 import { IColumn } from "../model/publish/column.model";
-import { IProfile, ITarget, ITopicTarget } from "../model/target/target";
+import { IProfile, ITarget } from "../model/target/target";
 import { CollectionService, ICollectionItem } from "./collection.service";
 import { EventService } from "./event.service";
-import { HttpService, sendRequest } from "./http.service";
+import { sendRequest } from "./http.service";
 import { ProfileService } from "./profile.service";
 import { WebviewService } from "./webview.service";
 import * as MarkdownIt from "markdown-it";
 import md5 = require("md5");
 import { PasteService } from "./paste.service";
 import { PipeService } from "./pipe.service";
-import { getExtensionPath } from "../global/globa-var";
 
 enum previewActions {
 	openInBrowser = '去看看'
-}
-
-interface TimeObject {
-	hour: number,
-	minute: number,
-
-	/**
-	 * interval in millisec
-	 */
-	date: Date
 }
 
 export class PublishService {
@@ -38,7 +24,7 @@ export class PublishService {
 
 	constructor(
 		protected zhihuMdParser: MarkdownIt,
-		protected defualtMdParser: MarkdownIt,
+		protected defaultMdParser: MarkdownIt,
 		protected webviewService: WebviewService,
 		protected collectionService: CollectionService,
 		protected eventService: EventService,
@@ -57,13 +43,24 @@ export class PublishService {
 		const events = this.eventService.getEvents();
 		events.forEach(e => {
 			e.timeoutId = setTimeout(() => {
-				this.postArticle(e.content, e.title);
+				this.zhihuPostNewArticle(e.content, e.title);
 				this.eventService.destroyEvent(e.hash);
 			}, e.date.getTime() - Date.now());
 		})
 	}
 
-	async publish(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit) {
+	private isZhihuArticle(meta: any): boolean {
+		const url: URL|undefined = meta['zhihu-url'] && new URL(meta['zhihu-url']);
+		if (url === undefined)
+			return true;
+		
+		if (QuestionAnswerPathReg.test(url.pathname) || QuestionPathReg.test(url.pathname))
+			return false;
+
+		return true;
+	}
+
+	private async renderZhihuMarkdown(textEditor: vscode.TextEditor): Promise<string> {
 		const text = textEditor.document.getText();
 		// text = text + "\n\n>本文使用 [WPL/s](https://zhuanlan.zhihu.com/p/390528313) 发布 [@GitHub](https://github.com/jks-liu/WPL-s)";
 
@@ -83,17 +80,58 @@ export class PublishService {
 			return Promise.resolve(pipePromise);
 		})
 		await pipePromise;
-		const html = this.zhihuMdParser.renderer.render(tokens, {}, {});
+		return this.zhihuMdParser.renderer.render(tokens, {}, {});
+	}
+
+	private addMeta(textEditor: vscode.TextEditor, key: string, value: string) {
+		if (!textEditor.document.lineAt(0).text.startsWith('---'))
+			return;
+
+		for (let i = 0; i < textEditor.document.lineCount; ++i) {
+			const line = textEditor.document.lineAt(i);
+			if (line.text.startsWith(`${key}:`)) {
+				textEditor.edit(e => {
+					e.replace(line.range, `${key}: ${value}`);
+				})
+				return;
+			}
+
+			// key does not exist, insert it
+			if (line.text.startsWith('---')) {
+				textEditor.edit(e => {
+					e.insert(line.range.start, `${key}: ${value}\n`);
+				})
+				return;
+			}
+		}		
+	}
+
+	private insertDefaultMeta(textEditor: vscode.TextEditor) {
+		const meta_template = `---
+title: 请输入标题（若是回答的话，请删除本行）
+zhihu-url: 请输入知乎链接（删除本行发表新的知乎专栏文章）
+zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行）
+注意: 所有的冒号是半角冒号，冒号后面有一个半角空格
+---
+`
+		textEditor.edit(e => {
+			e.insert(new vscode.Position(0, 0), meta_template);
+		})
+	}
+
+
+	async publish(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit) {	
+		const html = await this.renderZhihuMarkdown(textEditor);
 		const meta = (this.zhihuMdParser as any).meta;
-		console.log(typeof meta, meta, meta.title, meta.title === undefined, meta['zhihu-title']);
 	
 		/// Parse meta info
-		if (meta.title === undefined) {
-			vscode.window.showErrorMessage('请输入标题');
+		if (meta === undefined) {
+			vscode.window.showErrorMessage('WPL/s 使用元数据，请查看文档并添加元数据');
+			this.insertDefaultMeta(textEditor);
 			return;
 		}
 
-		const title: string = meta.title;
+		let title: string|undefined = meta.title;
 		let titleImage: string|undefined = meta['zhihu-title-image'];
 		const url: URL|undefined = meta['zhihu-url'] && new URL(meta['zhihu-url']);
 		if (titleImage !== undefined) {
@@ -114,7 +152,7 @@ export class PublishService {
 					date: new Date(),
 					hash: md5(html),
 					handler: () => {
-						this.putAnswer(html, answerId);
+						this.zhihuPostExistingAnswer(html, answerId);
 						this.eventService.destroyEvent(md5(html));
 					}
 				})) this.promptSameContentWarn()
@@ -128,20 +166,23 @@ export class PublishService {
 					date: new Date(),
 					hash: md5(html),
 					handler: () => {
-						this.postAnswer(html, questionId);
+						this.zhihuPostNewAnswer(html, questionId);
 						this.eventService.destroyEvent(md5(html));
 					}
 				})) this.promptSameContentWarn()
 			} else if (ArticlePathReg.test(url.pathname)) {
 				// Link like https://zhuanlan.zhihu.com/p/390528313
 				const articleId = url.pathname.replace(ArticlePathReg, '$1');
-				// if (!title) {
-				// 	title = await this._getTitle();
-				// }
-				const column = await this._selectColumn();
-				if (!column) {
-					vscode.window
+				if (!title) {
+					title = await this._getTitle();
+					if (title) {
+						this.addMeta(textEditor, 'title', title);
+					} else {
+						vscode.window.showErrorMessage('标题不对，中止');
+						return;
+					}
 				}
+				const column = await this._selectColumn();
 				if (!this.eventService.registerEvent({
 					content: html,
 					type: MediaTypes.question,
@@ -149,7 +190,7 @@ export class PublishService {
 					title: title,
 					hash: md5(html),
 					handler: () => {
-						this.putArticle(html, articleId, title, column, titleImage);
+						this.zhihuPostExistingArticle(html, articleId, title, column, titleImage);
 						this.eventService.destroyEvent(md5(html));
 					}
 				})) this.promptSameContentWarn()
@@ -164,9 +205,15 @@ export class PublishService {
 
 			if (selectFrom === MediaTypes.article) {
 				// user select to publish new article
-				// if (!title) {
-				// 	title = await this._getTitle();					
-				// }
+				if (!title) {
+					title = await this._getTitle();
+					if (title) {
+						this.addMeta(textEditor, 'title', title);
+					} else {
+						vscode.window.showErrorMessage('标题不对，中止');
+						return;
+					}
+				}
 				const column = await this._selectColumn();
 				if (!title) return;
 				if (!this.eventService.registerEvent({
@@ -176,11 +223,10 @@ export class PublishService {
 					date: new Date(),
 					hash: md5(html + title),
 					handler: () => {
-						this.postArticle(html, title, column, titleImage);
+						this.zhihuPostNewArticle(html, title, column, titleImage);
 						this.eventService.destroyEvent(md5(html + title));
 					}
 				})) this.promptSameContentWarn()
-				// else this.promptEventRegistedInfo(timeObject)
 
 			} else if (selectFrom === MediaTypes.answer) {
 				// user select from collection
@@ -197,22 +243,12 @@ export class PublishService {
 					date: new Date(),
 					hash: md5(html),
 					handler: () => {
-						this.postAnswer(html, selectedTarget.id);
+						this.zhihuPostNewAnswer(html, selectedTarget.id);
 						this.eventService.destroyEvent(md5(html));
 					}
 				})) this.promptSameContentWarn();
 			}
 		}
-	}
-
-	private removeTitleAndBgFromContent(tokens, openIndex: number, bgIndex: number, html: string) {
-		tokens = tokens.filter(this._removeTitleAndBg(openIndex, bgIndex));
-		html = this.zhihuMdParser.renderer.render(tokens, {}, {});
-		return { tokens, html };
-	}
-
-	private _removeTitleAndBg(openIndex: number, bgIndex: number) {
-		return (t, i) => Math.abs(openIndex + 1 - i) > 1 && bgIndex != i;
 	}
 
 	private promptSameContentWarn() {
@@ -250,7 +286,7 @@ export class PublishService {
 		).then(item => item.value);
 	}
 
-	public putAnswer(html: string, answerId: string) {
+	public zhihuPostExistingAnswer(html: string, answerId: string) {
 		sendRequest({
 			uri: `${AnswerAPI}/${answerId}`,
 			method: 'put',
@@ -277,7 +313,7 @@ export class PublishService {
 		})
 	}
 
-	public postAnswer(html: string, questionId: string) {
+	public zhihuPostNewAnswer(html: string, questionId: string) {
 		sendRequest({
 			uri: `${QuestionAPI}/${questionId}/answers`,
 			method: 'post',
@@ -288,18 +324,8 @@ export class PublishService {
 		}).then(resp => {
 			if (resp.statusCode == 200) {
 				const newUrl = `${AnswerURL}/${resp.body.id}`;
+				this.addMeta(vscode.window.activeTextEditor, "zhihu-url", newUrl);
 				this.promptSuccessMsg(newUrl);
-				// const pane = vscode.window.createWebviewPanel('zhihu', 'zhihu', vscode.ViewColumn.One, { enableScripts: true, enableCommandUris: true, enableFindWidget: true });
-				// sendRequest({ uri: `${AnswerURL}/${resp.body.id}`, gzip: true }).then(
-				// 	resp => {
-				// 		pane.webview.html = resp
-				// 	}
-				// );
-				const editor = vscode.window.activeTextEditor;
-				const uri = editor.document.uri;
-				editor.edit(e => {
-					e.replace(editor.document.lineAt(0).range, `#! ${newUrl}\n`)
-				})
 			} else {
 				if (resp.statusCode == 400 || resp.statusCode == 403) {
 					vscode.window.showWarningMessage(`发布失败，你已经在该问题下发布过答案，请将头部链接更改为\
@@ -311,16 +337,7 @@ export class PublishService {
 		})
 	}
 
-	public async postArticle(content: string, title?: string, column?: IColumn, titleImage?: string) {
-		if (!title) {
-			title = await vscode.window.showInputBox({
-				ignoreFocusOut: true,
-				prompt: "输入文章标题：",
-				placeHolder: ""
-			})
-		}
-		if (!title) return;
-
+	public async zhihuPostNewArticle(content: string, title: string, column?: IColumn, titleImage?: string) {
 		const postResp: ITarget = await sendRequest({
 			uri: `${ZhuanlanAPI}/drafts`,
 			json: true,
@@ -338,7 +355,7 @@ export class PublishService {
 			}
 		})
 
-		let patchResp = await sendRequest({
+		await sendRequest({
 			uri: `${ZhuanlanAPI}/${postResp.id}/draft`,
 			json: true,
 			method: 'patch',
@@ -360,10 +377,7 @@ export class PublishService {
 			resolveWithFullResponse: true
 		})
 		if (resp.statusCode < 300) {
-			const editor = vscode.window.activeTextEditor;
-			editor.edit(e => {
-				e.insert(new vscode.Position(0, 0), `#! ${ZhuanlanURL}${postResp.id}\n`)
-			})
+			this.addMeta(vscode.window.activeTextEditor, "zhihu-url", `${ZhuanlanURL}${postResp.id}`);
 			this.promptSuccessMsg(`${ZhuanlanURL}${postResp.id}`, title)
 		} else {
 			vscode.window.showWarningMessage(`文章发布失败，错误代码${resp.statusCode}`)
@@ -371,17 +385,8 @@ export class PublishService {
 		return resp;
 	}
 
-	public async putArticle(content: string, articleId: string, title?: string, column?: IColumn, titleImage?: string) {
-		if (!title) {
-			title = await vscode.window.showInputBox({
-				ignoreFocusOut: true,
-				prompt: "修改文章标题：",
-				placeHolder: ""
-			})
-		}
-		if (!title) return;
-
-		let patchResp = await sendRequest({
+	public async zhihuPostExistingArticle(content: string, articleId: string, title: string, column?: IColumn, titleImage?: string) {
+		await sendRequest({
 			uri: `${ZhuanlanAPI}/${articleId}/draft`,
 			json: true,
 			method: 'patch',

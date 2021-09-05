@@ -1,12 +1,14 @@
 ![在VS Code中搜索`zhihu`](./res/media/vs-code-extension-search-zhihu-this.png)
 
-# WPL/s v0.4.0发布 - 支持参考文献 - 让你在VS Code中编写发布知乎文章及回答问题
+# WPL/s v1.0.0发布 - 支持 Jekyll 元数据 - 让你在VS Code中编写发布知乎文章及回答问题
+元数据格式如下
 ```md
-用[^n]来引用。
-
-[^n]: https://网址.com 说明文字
-
-注意字符 ^ 不能少。冒号后面有一个空格。网址中不能有空格。网址和说明文字之间有一个空格，说明文字自己可以有空格。
+---
+title: 请输入标题（若是回答的话，请删除本行）
+zhihu-url: 请输入知乎链接（删除本行发表新的知乎专栏文章）
+zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行）
+注意: 所有的冒号是半角冒号，冒号后面有一个半角空格
+---
 ```
 
 # WPL/s - 让你在VS Code中编写发布知乎文章及回答问题
@@ -24,7 +26,7 @@
 
 # 支持的功能
 
-测试使用[这个markdown文件](https://github.com/jks-liu/zhihu/blob/master/WPLs-introduction-and-test.md)，测试结果可以查看[这篇知乎专栏文章](https://zhuanlan.zhihu.com/p/390528313)。
+测试使用[这个 Markdown 文件](https://github.com/jks-liu/zhihu/blob/master/WPLs-introduction-and-test.md)，测试结果可以查看[这篇知乎专栏文章](https://zhuanlan.zhihu.com/p/390528313)。
 
 | Markdown基础功能 | 支持与否 |
 | :--- | :--- |
@@ -45,6 +47,7 @@
 
 | 其它特色功能 | 支持与否 |
 | :--- | :--- |
+| 元数据 | :heavy_check_mark: *4 |
 | 目录 | :x: *0 |
 | 章节标题自动编号 | :x: *0 |
 | Emoji表情 | :heavy_check_mark: *5 |
@@ -65,11 +68,12 @@
 | 赞赏 | :x: |
 | 追更 | :x: |
 
-0. 打算近期支持，star，点赞，收藏，一键三连给我动力呀
+（0）打算近期支持，star，点赞，收藏，一键三连给我动力呀
+
 1. 最多可支持4级标题
 2. 表格暂时不支持对齐
 3. 知乎本身不支持，请大家踊跃向[知乎小管家](https://www.zhihu.com/people/zhihuadmin)提意见
-4. 格式如下：
+4. 格式下一小节
    ```md
     用[^n]来引用。
 
@@ -78,6 +82,30 @@
    注意字符 ^ 不能少。冒号后面有一个空格。网址中不能有空格。网址和说明文字之间有一个空格，说明文字自己可以有空格。
    ```
 5. 支持大部分Emoji（很多emoji刚发的时候可以看到，但一段时间过后就会被知乎过滤掉），具体列表请查看上面的链接。
+
+# 部分格式提醒
+
+最直接的方法是参考[上面提到的 Markdown 测试文件](https://github.com/jks-liu/zhihu/blob/master/WPLs-introduction-and-test.md)。
+
+## [Jekyll 元数据](https://jekyllrb.com/docs/front-matter/)
+目前仅支持如下元数据：
+```md
+---
+title: 请输入标题（若是回答的话，请删除本行）
+zhihu-url: 请输入知乎链接（删除本行发表新的知乎专栏文章）
+zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行）
+注意: 所有的冒号是半角冒号，冒号后面有一个半角空格
+---
+```
+
+## 参考文献
+```md
+   用[^n]来引用。
+
+[^n]: https://网址.com 说明文字
+
+注意字符 ^ 不能少。冒号后面有一个空格。网址中不能有空格。网址和说明文字之间有一个空格，说明文字自己可以有空格。
+```
 
 # 使用方法
 
