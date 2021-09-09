@@ -1,0 +1,11 @@
+# Version bump checklist
+
+- Update readme
+- Update changelog
+- Update document
+- Commit to github
+- vsce publish
+- 1. Update the test markdown
+  2. Commit to github
+  3. Publish to zhihu
+- Publish readme to zhihu

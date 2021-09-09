@@ -1,17 +1,8 @@
 ---
-title: WPL/s v1.0.0发布 - 支持 Jekyll 元数据 - 让你在VS Code中编写发布知乎文章及回答问题
+title: WPL/s v1.1.0发布 - 支持本地 svg 图片 - 让你在VS Code中编写发布知乎文章及回答问题
 zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 ---
 
-元数据格式如下
-```md
----
-title: 请输入标题（若是回答的话，请删除本行）
-zhihu-url: 请输入知乎链接（删除本行发表新的知乎专栏文章）
-zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行）
-注意: 所有的冒号是半角冒号，冒号后面有一个半角空格
----
-```
 
 # WPL/s - 让你在VS Code中编写发布知乎文章及回答问题
 
@@ -32,11 +23,11 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 
 | Markdown基础功能 | 支持与否 |
 | :--- | :--- |
-| 标题 | :heavy_check_mark: *1 |
+| 章节标题 | :heavy_check_mark: *1 |
 | 分割线 | :heavy_check_mark: |
 | 引用 | :heavy_check_mark: |
 | 链接 | :heavy_check_mark: |
-| 图片 | :heavy_check_mark: |
+| 图片 | :heavy_check_mark: *6 |
 | 表格 | :heavy_check_mark: *2 |
 | 公式 | :heavy_check_mark: |
 | 代码块 | :heavy_check_mark: |
@@ -58,9 +49,10 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 
 | 知乎特色功能 | 支持与否 |
 | --- | --- |
+| 标题 | :heavy_check_mark: *7 |
 | 回答问题 | :heavy_check_mark: |
 | 发布文章 | :heavy_check_mark: |
-| 题图 | :heavy_check_mark: |
+| 题图 | :heavy_check_mark: *7 |
 | 链接卡片 | :x: *0 |
 | 视频 | :x: |
 | 好物推荐 | :x: |
@@ -72,11 +64,15 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 
 （0）打算近期支持，star，点赞，收藏，一键三连给我动力呀
 
-1. 最多可支持4级标题
+1. 最多可支持 4 级标题
 2. 表格暂时不支持对齐
-3. 知乎本身不支持，请大家踊跃向[知乎小管家](https://www.zhihu.com/people/zhihuadmin)提意见
+3. 知乎本身不支持，请大家踊跃向[知乎小管家](https://www.zhihu.com/people/zhihuadmin)提建议
 4. 格式见下一小节
 5. 支持大部分Emoji（很多emoji刚发的时候可以看到，但一段时间过后就会被知乎过滤掉），具体列表请查看上面的链接。
+6. - 同时支持本地图片和网络链接
+   - 支持 svg 格式，但上传时会自动转换成 png 格式再上传
+   - svg 格式暂时不支持网络连接
+7. 在元数据中指定
 
 # 部分格式提醒
 
@@ -111,17 +107,17 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 点击右上角发布按钮。
 
 ## Markdown语法
-自行Google，或查看上面的测试文件。
+自行 Google，或查看上面的测试文件。
 
 ## 知乎文章题图
 在第一个一级标题前的图片会被当做题图。
 
 ## Emoji表情
-语法和Github中使用Emoji一样，自行Google或查看上面的测试文件。
+语法和 Github 中使用 Emoji 一样，自行 Google 或查看上面的测试文件。
 
 # 开源协议
 
-MIT许可，详情请查看[LICENSE](./LICENSE)。
+MIT 许可，详情请查看[LICENSE](./LICENSE)。
 
 # 贡献
-欢迎提交issue和pr。
+欢迎提交 issue 和 pr。
