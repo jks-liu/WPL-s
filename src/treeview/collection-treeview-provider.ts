@@ -76,15 +76,17 @@ export class CollectionItem extends LinkableTreeItem {
 		public readonly target?: IQuestionAnswerTarget | IQuestionTarget | IArticleTarget,
 	) {
 		super(label, collapsibleState, target ? target.url : '');
+		this.tooltip = this.target ? this.target.excerpt : '';
+		this.description = this.target ? this.target.excerpt : '';
 	}
 
-	get tooltip(): string | undefined {
-		return this.target ? this.target.excerpt : '';
-	}
+	// get tooltip(): string | undefined {
+	// 	return this.target ? this.target.excerpt : '';
+	// }
 
-	get description(): string | undefined {
-		return this.target ? this.target.excerpt : '';
-	}
+	// get description(): string | undefined {
+	// 	return this.target ? this.target.excerpt : '';
+	// }
 
 	// iconPath = {
 	// 	light: vscode.ThemeIcon.File,

@@ -84,15 +84,17 @@ export class ZhihuTreeItem extends LinkableTreeItem  {
 		public page?: number,
 	) {
 		super(label, collapsibleState, target && target.url ? target.url : '');
+		this.tooltip = this.target && this.target.excerpt ? this.target.excerpt : '';
+		this.description = this.target && this.target.excerpt ? this.target.excerpt : '';
 	}
 
-	get tooltip(): string {
-		return this.target && this.target.excerpt ? this.target.excerpt : '';
-	}
+	// get tooltip(): string {
+	// 	return this.target && this.target.excerpt ? this.target.excerpt : '';
+	// }
 
-	get description(): string {
-		return this.target && this.target.excerpt ? this.target.excerpt : '';
-	}
+	// get description(): string {
+	// 	return this.target && this.target.excerpt ? this.target.excerpt : '';
+	// }
 
 	// iconPath = {
 	// 	light: vscode.ThemeIcon.File,

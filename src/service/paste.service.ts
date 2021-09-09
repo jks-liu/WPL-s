@@ -13,6 +13,7 @@ import { Output } from "../global/logger";
 import { IImageUploadToken } from "../model/publish/image.model";
 import { sendRequest } from "./http.service";
 import { getCache, setCache } from "../global/cache";
+import * as sharp from "sharp";
 
 /**
  * Paste Service for image upload
@@ -73,14 +74,21 @@ export class PasteService {
                 enableCache: true
             });
         } else {
+            // Get absolute image path
             if(!path.isAbsolute(link)) {
                 let _dir = path.dirname(vscode.window.activeTextEditor.document.uri.fsPath);
                 link = path.join(_dir, link);    
             }
             try {
+                // Convert svg to png
+                if (path.extname(link).toLowerCase() === ".svg") {
+                    await sharp(link).png().toFile(link + ".png")
+                    link = link + ".png";
+                }
+
                 buffer = fs.readFileSync(link);                
             } catch (error) {
-                Output('图片获取失败！', 'warn')
+                Output('图片获取失败！', 'warn');
                 buffer = undefined
             }
         }

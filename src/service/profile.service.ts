@@ -16,7 +16,8 @@ export class ProfileService {
 		if (await this.accountService.isAuthenticated()) {
 			this.profile = await sendRequest({
 				uri: SelfProfileAPI,
-				json: true
+				json: true,
+				gzip: true,
 			});
 		} else {
 			this.profile = undefined;

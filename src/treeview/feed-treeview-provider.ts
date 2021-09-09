@@ -125,15 +125,17 @@ export class FeedTreeItem extends LinkableTreeItem {
 		public avatarUrl?: string
 	) {
 		super(label, collapsibleState, target ? target.url : '');
+		this.tooltip = this.target ? this.target.excerpt : '';
+		this.description = this.target && this.target.excerpt ? this.target.excerpt : '';
 	}
 
-	get tooltip(): string | undefined {
-		return this.target ? this.target.excerpt : '';
-	}
+	// get tooltip(): string | undefined {
+	// 	return this.target ? this.target.excerpt : '';
+	// }
 
-	get description(): string {
-		return this.target && this.target.excerpt ? this.target.excerpt : '';
-	}
+	// get description(): string {
+	// 	return this.target && this.target.excerpt ? this.target.excerpt : '';
+	// }
 
 	iconPath = this.avatarUrl ? vscode.Uri.parse(this.avatarUrl) : false;
 
@@ -154,15 +156,17 @@ export class EventTreeItem extends vscode.TreeItem {
 		public readonly parent: vscode.TreeItem
 	) {
 		super(removeSpace(removeHtmlTag(event.content)).slice(0, 12) + '...', collapsibleState);
+		this.tooltip = removeHtmlTag(this.event.content);
+		this.description = beautifyDate(this.event.date);
 	}
 
-	get tooltip(): string | undefined {
-		return removeHtmlTag(this.event.content);
-	}
+	// get tooltip(): string | undefined {
+	// 	return removeHtmlTag(this.event.content);
+	// }
 
-	get description(): string {
-		return beautifyDate(this.event.date);
-	}
+	// get description(): string {
+	// 	return beautifyDate(this.event.date);
+	// }
 
 	iconPath = false;
 

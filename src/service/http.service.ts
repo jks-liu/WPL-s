@@ -96,8 +96,8 @@ export class HttpService {
 	}
 }
 
-var httpService = new HttpService()
+const httpService = new HttpService()
 
-export const sendRequest = httpService.sendRequest;
-export const clearCookie = httpService.clearCookie;
-export const clearCache = httpService.clearCache;
+export const sendRequest = (options) => httpService.sendRequest(options);
+export const clearCookie = (domain?: string) => httpService.clearCookie(domain);
+export const clearCache = () => httpService.clearCache();
