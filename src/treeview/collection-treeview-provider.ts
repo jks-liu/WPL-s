@@ -80,19 +80,6 @@ export class CollectionItem extends LinkableTreeItem {
 		this.description = this.target ? this.target.excerpt : '';
 	}
 
-	// get tooltip(): string | undefined {
-	// 	return this.target ? this.target.excerpt : '';
-	// }
-
-	// get description(): string | undefined {
-	// 	return this.target ? this.target.excerpt : '';
-	// }
-
-	// iconPath = {
-	// 	light: vscode.ThemeIcon.File,
-	// 	dark: vscode.ThemeIcon.File
-	// };
-
 	contextValue =  this.collapsibleState == vscode.TreeItemCollapsibleState.None ? 'collect-item' : this.type;
 
 }

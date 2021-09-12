@@ -37,7 +37,7 @@ export class HttpService {
 		options.headers['cookie'] = getCookieJar().getCookieStringSync(options.uri);
 		// options.headers['cookie'] = getCookieJar().getCookieStringSync('www.zhihu.com');
 		// headers['cookie'] = cookieService.getCookieString(options.uri);
-		var returnBody;
+		let returnBody;
 		if (options.resolveWithFullResponse == undefined || options.resolveWithFullResponse == false) {
 			returnBody = true;
 		} else {
@@ -47,7 +47,7 @@ export class HttpService {
 
 		options.simple = false;
 
-		var resp;
+		let resp;
 		if (!this.cache) this.cache = {}
 		try {
 			if (this.cache[options.uri]) {

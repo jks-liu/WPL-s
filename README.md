@@ -1,7 +1,13 @@
 ---
-title: WPL/s v1.1.0发布 - 支持本地 svg 图片 - 让你在VS Code中编写发布知乎文章及回答问题
+title: WPL/s v1.3.0发布 - 支持本地链接卡片 - 让你在VS Code中编写发布知乎文章及回答问题
 zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 ---
+
+链接卡片格式
+```
+[![zhihu-link-card:本项目 GitHub 主页](./pics/vs-code-extension-search-zhihu.png)](https://github.com/jks-liu/WPL-s)
+```
+语法上和一个图片链接一样，但图片的文字需要以`zhihu-link-card:`开头。
 
 
 # WPL/s - 让你在VS Code中编写发布知乎文章及回答问题
@@ -26,7 +32,7 @@ zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 | 章节标题 | :heavy_check_mark: *1 |
 | 分割线 | :heavy_check_mark: |
 | 引用 | :heavy_check_mark: |
-| 链接 | :heavy_check_mark: |
+| 链接 | :heavy_check_mark: *8 |
 | 图片 | :heavy_check_mark: *6 |
 | 表格 | :heavy_check_mark: *2 |
 | 公式 | :heavy_check_mark: |
@@ -53,7 +59,7 @@ zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 | 回答问题 | :heavy_check_mark: |
 | 发布文章 | :heavy_check_mark: |
 | 题图 | :heavy_check_mark: *7 |
-| 链接卡片 | :x: *0 |
+| 链接卡片 | :heavy_check_mark: *4 |
 | 视频 | :x: |
 | 好物推荐 | :x: |
 | 附件 | :x: |
@@ -69,10 +75,9 @@ zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 3. 知乎本身不支持，请大家踊跃向[知乎小管家](https://www.zhihu.com/people/zhihuadmin)提建议
 4. 格式见下一小节
 5. 支持大部分Emoji（很多emoji刚发的时候可以看到，但一段时间过后就会被知乎过滤掉），具体列表请查看上面的链接。
-6. - 同时支持本地图片和网络链接
-   - 支持 svg 格式，但上传时会自动转换成 png 格式再上传
-   - svg 格式暂时不支持网络连接
+6. - 同时支持本地图片和网络链接（暂时不支持 SVG 格式）
 7. 在元数据中指定
+8. 不支持为图片设置连接
 
 # 部分格式提醒
 
@@ -88,6 +93,12 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 注意: 所有的冒号是半角冒号，冒号后面有一个半角空格
 ---
 ```
+
+## 链接卡片
+```
+[![zhihu-link-card:本项目 GitHub 主页](./pics/vs-code-extension-search-zhihu.png)](https://github.com/jks-liu/WPL-s)
+```
+语法上和一个图片链接一样，但图片的文字需要以`zhihu-link-card:`开头。
 
 ## 参考文献
 ```md

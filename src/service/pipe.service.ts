@@ -20,6 +20,21 @@ export class PipeService {
 		for (const img of images) {
 			img.attrs[0][1] = await this.pasteService.uploadImageFromLink(img.attrs[0][1]);
 		}
+
+		// Image in zhihu link card
+		for (let i = 0; i < tokens.length; i++) {
+            if (tokens[i].type === 'inline' && tokens[i].children) {
+                const children = tokens[i].children as Token[];
+                for (let i = 0; i < children.length; i++) {
+					if (children[i].type === 'link_open') {
+						const image_path = children[i].attrGet("data-image")
+						if (image_path  !== undefined && image_path !== null) {
+                        	children[i].attrSet("data-image", await this.pasteService.uploadImageFromLink(image_path));
+						}
+					}
+                }
+            }
+        }
 		return Promise.resolve(tokens);
 	}
 

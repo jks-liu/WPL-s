@@ -1,6 +1,7 @@
 import * as OSS from "ali-oss";
 import * as childProcess from "child_process";
 import * as fs from "fs";
+import * as os from "os";
 import * as md5 from "md5";
 import * as path from "path";
 import * as vscode from "vscode";
@@ -13,7 +14,7 @@ import { Output } from "../global/logger";
 import { IImageUploadToken } from "../model/publish/image.model";
 import { sendRequest } from "./http.service";
 import { getCache, setCache } from "../global/cache";
-import * as sharp from "sharp";
+// import * as sharp from "sharp";
 
 /**
  * Paste Service for image upload
@@ -64,29 +65,37 @@ export class PasteService {
             return Promise.resolve(getCache(link));
         }
         const zhihu_agent = ZhihuOSSAgent;
-        const outerPic = /^https:\/\/.*/g;
+        const outerPic = /^https?:\/\/.*/g;
         let buffer;
         if (outerPic.test(link)) {
-            buffer = await sendRequest({
-                uri: link,
-                gzip: false,
-                encoding: null,
-                enableCache: true
-            });
+            if (path.extname(link).toLowerCase() === ".svg") {
+                Output('暂时不支持 SVG 格式的图片', 'warn');
+                buffer = undefined
+            } else {
+                buffer = await sendRequest({
+                    uri: link,
+                    gzip: false,
+                    encoding: null,
+                    enableCache: true
+                });
+            }
+            // const tmpPath = path.join(os.tmpdir(), path.basename(link));
+            // fs.writeFileSync(tmpPath, buffer);
+            // return this.uploadImageFromLink(tmpPath, insert);
         } else {
             // Get absolute image path
             if(!path.isAbsolute(link)) {
-                let _dir = path.dirname(vscode.window.activeTextEditor.document.uri.fsPath);
+                const _dir = path.dirname(vscode.window.activeTextEditor.document.uri.fsPath);
                 link = path.join(_dir, link);    
             }
             try {
                 // Convert svg to png
                 if (path.extname(link).toLowerCase() === ".svg") {
-                    await sharp(link).png().toFile(link + ".png")
-                    link = link + ".png";
-                }
-
-                buffer = fs.readFileSync(link);                
+                    Output('暂时不支持 SVG 格式的图片', 'warn');
+                    buffer = undefined
+                } else {
+                    buffer = fs.readFileSync(link);
+                }        
             } catch (error) {
                 Output('图片获取失败！', 'warn');
                 buffer = undefined

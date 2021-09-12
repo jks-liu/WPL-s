@@ -160,14 +160,6 @@ export class EventTreeItem extends vscode.TreeItem {
 		this.description = beautifyDate(this.event.date);
 	}
 
-	// get tooltip(): string | undefined {
-	// 	return removeHtmlTag(this.event.content);
-	// }
-
-	// get description(): string {
-	// 	return beautifyDate(this.event.date);
-	// }
-
 	iconPath = false;
 
 	contextValue = 'event';
