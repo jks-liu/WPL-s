@@ -1,5 +1,5 @@
 ---
-title: WPL/s v1.3.0发布 - 支持本地链接卡片 - 让你在VS Code中编写发布知乎文章及回答问题
+title: WPL/s v1.3.0发布 - 支持链接卡片 - 让你在 VS Code 中编写发布知乎文章及回答问题
 zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 ---
 
@@ -13,6 +13,8 @@ zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 # WPL/s - 让你在VS Code中编写发布知乎文章及回答问题
 
 这是一个开源项目，你可以在[jks-liu.WPL-s@Github](https://github.com/jks-liu/WPL-s)上找到它。
+
+[![zhihu-link-card:本项目 GitHub 主页](res/media/vs-code-extension-search-zhihu.png)](https://github.com/jks-liu/WPL-s)
 
 本项目源于牛岱的开源项目（开源协议：MIT）[VSCode-Zhihu](https://github.com/niudai/VSCode-Zhihu)，在此表示感谢。
 
@@ -79,9 +81,12 @@ zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 7. 在元数据中指定
 8. 不支持为图片设置连接
 
-# 部分格式提醒
+# Markdown 语法文档
 
 最直接的方法是参考[上面提到的 Markdown 测试文件](https://github.com/jks-liu/zhihu/blob/master/WPLs-introduction-and-test.md)。
+
+## Markdown语法
+自行 Google，或查看上面的测试文件。由于本项目使用 `makdown-it` 来渲染 Markdown，所以遵循 [CommonMark](https://commonmark.org/) 规范。
 
 ## [Jekyll 元数据](https://jekyllrb.com/docs/front-matter/)
 目前仅支持如下元数据：
@@ -95,10 +100,21 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 ```
 
 ## 链接卡片
-```
+```md
 [![zhihu-link-card:本项目 GitHub 主页](./pics/vs-code-extension-search-zhihu.png)](https://github.com/jks-liu/WPL-s)
 ```
 语法上和一个图片链接一样，但图片的文字需要以`zhihu-link-card:`开头。
+
+## 任务列表
+```md
+- [ ] 未完成的任务
+- [x] 已完成的任务
+    - [ ] 嵌套未完成的任务
+    - [x] 嵌套已完成的任务
+```
+
+## Emoji表情
+语法和 Github 中使用 Emoji 一样，自行 Google 或查看上面的测试文件。
 
 ## 参考文献
 ```md
@@ -109,6 +125,7 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 注意字符 ^ 不能少。冒号后面有一个空格。网址中不能有空格。网址和说明文字之间有一个空格，说明文字自己可以有空格。
 ```
 
+
 # 使用方法
 
 ## 登录
@@ -117,14 +134,6 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 ## 发布文章
 点击右上角发布按钮。
 
-## Markdown语法
-自行 Google，或查看上面的测试文件。
-
-## 知乎文章题图
-在第一个一级标题前的图片会被当做题图。
-
-## Emoji表情
-语法和 Github 中使用 Emoji 一样，自行 Google 或查看上面的测试文件。
 
 # 开源协议
 

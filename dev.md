@@ -9,3 +9,19 @@
   2. Commit to github
   3. Publish to zhihu
 - Publish readme to zhihu
+- Promote
+  * oschina
+  * cnblogs
+  * juejin
+  * jianshu
+  * zhihu
+  * github
+  * bilibili
+  * medium
+  * twitter
+  * facebook
+  * linkedin
+  * weibo
+  * reddit
+  * telegram
+  
