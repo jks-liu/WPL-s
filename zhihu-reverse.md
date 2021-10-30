@@ -43,7 +43,6 @@
 >
 ```
 
-
 # 标签
 
 DELETE https://zhuanlan.zhihu.com/api/articles/101553734/topics/20053651
@@ -97,3 +96,86 @@ POST https://zhuanlan.zhihu.com/api/articles/101553734/topics
 </p>
 <p><br /></p>
 ```
+
+content: <h2>Markdown 测试专用</h2><p>#! https://zhuanlan.zhihu.com/p/101553734</p><p>测试 4</p><a data-draft-node="block" data-draft-type="mcn-link-card" data-mcn-id="1422499037739765760"></a><p>ab</p>
+
+# 标签
+
+首先 GET `https://zhuanlan.zhihu.com/api/articles/101553734/draft` 获得
+
+```json
+{
+  "image_url": "https://pic4.zhimg.com/v2-c6dfa5adc2f6980e4382114c60236710_b.jpg",
+  "updated": 1634565226,
+  "copyright_permission": "need_review",
+  "reviewers": [],
+  "topics": [
+    {
+      "url": "https://www.zhihu.com/api/v4/topics/21504097",
+      "type": "topic",
+      "id": "21504097",
+      "name": "\u6492\u53d1\u751f\u7684\u7b97\u6cd5"
+    },
+    {
+      "url": "https://www.zhihu.com/api/v4/topics/19586973",
+      "type": "topic",
+      "id": "19586973",
+      "name": "4A \u5e7f\u544a\u516c\u53f8"
+    }
+  ],
+  "excerpt": "",
+  "article_type": "normal",
+  "excerpt_title": "",
+  "summary": "\u672c\u6587\u4e13\u6587\u7528\u6765\u6d4b\u8bd5\u77e5\u4e4e\u7684\u5404\u79cd\u529f\u80fd\u3002",
+  "title_image_size": { "width": 0, "height": 0 },
+  "id": 101553734,
+  "author": {
+    "is_followed": false,
+    "avatar_url_template": "https://pic2.zhimg.com/6d957ba5a_{size}.jpg",
+    "uid": "30962201133056",
+    "user_type": "people",
+    "is_following": false,
+    "url_token": "jks-liu",
+    "id": "70179d5c52a3edbaa459e10e28c73748",
+    "description": "",
+    "name": "Jks Liu",
+    "is_advertiser": false,
+    "headline": "\u8bf7\u52ff\u9080\u8bf7\u6211\u56de\u7b54\u95ee\u9898",
+    "gender": 0,
+    "url": "/people/70179d5c52a3edbaa459e10e28c73748",
+    "avatar_url": "https://pic2.zhimg.com/6d957ba5a_l.jpg",
+    "is_org": false,
+    "type": "people"
+  },
+  "url": "https://zhuanlan.zhihu.com/p/101553734",
+  "comment_permission": "all",
+  "settings": {
+    "commercial_report_info": { "is_report": false, "commercial_types": [] },
+    "table_of_contents": { "enabled": false }
+  },
+  "created": 1578406772,
+  "content": "<p>\u672c\u6587\u4e13\u6587\u7528\u6765\u6d4b\u8bd5\u77e5\u4e4e\u7684\u5404\u79cd\u529f\u80fd\u3002</p>",
+  "has_publishing_draft": false,
+  "state": "published",
+  "is_title_image_full_screen": false,
+  "title": "\u6d4b\u8bd5\u4e13\u7528",
+  "title_image": "https://pic4.zhimg.com/v2-c6dfa5adc2f6980e4382114c60236710_b.jpg",
+  "type": "article_draft"
+}
+```
+
+添加标签 POST `https://zhuanlan.zhihu.com/api/articles/101553734/topics`
+
+```json
+{
+  "introduction": "",
+  "avatarUrl": "https://pic3.zhimg.com/80/281aa82e7b9bf232dfbf1b3a9cf6d909_l.jpg?source=4e949a73",
+  "name": "A 股大跌",
+  "url": "https://www.zhihu.com/topic/20013362",
+  "type": "topic",
+  "excerpt": "",
+  "id": "20013362"
+}
+```
+
+删除标签 DELETE `https://zhuanlan.zhihu.com/api/articles/101553734/topics/20013362`
