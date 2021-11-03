@@ -3,6 +3,7 @@
 - Update readme
 - Update changelog
 - Update document
+- bump version
 - Commit to github
 - vsce publish
 - 1. Update the test markdown
