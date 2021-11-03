@@ -1,13 +1,7 @@
 ---
-title: WPL/s v1.3.0发布 - 支持链接卡片 - 让你在 VS Code 中编写发布知乎文章及回答问题
+title: WPL/s v1.4.0发布 - 支持草稿 - 让你在 VS Code 中编写发布知乎文章及回答问题
 zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 ---
-
-链接卡片格式
-```
-[![zhihu-link-card:本项目 GitHub 主页](./pics/vs-code-extension-search-zhihu.png)](https://github.com/jks-liu/WPL-s)
-```
-语法上和一个图片链接一样，但图片的文字需要以`zhihu-link-card:`开头。
 
 
 # WPL/s - 让你在VS Code中编写发布知乎文章及回答问题
@@ -24,6 +18,8 @@ zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 在VS Code中搜索`zhihu`，安装即可，如下图。虽然目前排在最后一个:cry:。
 
 ![在VS Code中搜索`zhihu`](./res/media/vs-code-extension-search-zhihu.png)
+
+为了更高效地编写 Markdown 文件，建议安装 [Markdown All in One](https://github.com/yzhang-gh/vscode-markdown) 插件。
 
 # 支持的功能
 
@@ -66,7 +62,7 @@ zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 | 好物推荐 | :x: |
 | 附件 | :x: |
 | 标签 | :x: *0 |
-| 草稿 | :x: |
+| 草稿 | :heavy_check_mark: *9|
 | 赞赏 | :x: |
 | 追更 | :x: |
 
@@ -80,13 +76,14 @@ zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 6. - 同时支持本地图片和网络链接（暂时不支持 SVG 格式）
 7. 在元数据中指定
 8. 不支持为图片设置连接
+9. 草稿暂时只支持专栏文章
 
 # Markdown 语法文档
 
 最直接的方法是参考[上面提到的 Markdown 测试文件](https://github.com/jks-liu/zhihu/blob/master/WPLs-introduction-and-test.md)。
 
 ## Markdown语法
-自行 Google，或查看上面的测试文件。由于本项目使用 `makdown-it` 来渲染 Markdown，所以遵循 [CommonMark](https://commonmark.org/) 规范。
+自行 Google，或查看上面的测试文件。由于本项目使用 `markdown-it` 来渲染 Markdown，所以遵循 [CommonMark](https://commonmark.org/) 规范。
 
 ## [Jekyll 元数据](https://jekyllrb.com/docs/front-matter/)
 目前仅支持如下元数据：
@@ -129,10 +126,13 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 # 使用方法
 
 ## 登录
-点击左上角登录按钮，用知乎扫描二维码。
+点击左上角![登录按钮](res/media/light/outline_login_black_24dp.png)，用知乎扫描二维码。
 
 ## 发布文章
-点击右上角发布按钮。
+点击右上角![发布按钮](res/media/light/outline_publish_black_24dp.png)。
+
+## 保存草稿
+点击右上角![草稿按钮](res/media/light/outline_drafts_black_24dp.png)。
 
 
 # 开源协议

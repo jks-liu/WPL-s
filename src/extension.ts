@@ -86,7 +86,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		collectionTreeViewProvider,
 	)
 	vscode.commands.registerTextEditorCommand('zhihu.publish', (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit) => {
-		publishService.publish(textEditor, edit);
+		publishService.publish(textEditor, edit, false);
+	})
+	vscode.commands.registerTextEditorCommand('zhihu.drafts', (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit) => {
+		publishService.publish(textEditor, edit, true);
 	})
 	vscode.commands.registerCommand('zhihu.uploadImageFromClipboard', async () => {
 		pasteService.uploadImageFromClipboard()

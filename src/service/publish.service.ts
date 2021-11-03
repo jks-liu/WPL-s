@@ -120,7 +120,7 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 	}
 
 
-	async publish(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit) {	
+	async publish(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, draft: boolean) {	
 		const html = await this.renderZhihuMarkdown(textEditor);
 		const meta = (this.zhihuMdParser as any).meta;
 	
@@ -190,7 +190,7 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 					title: title,
 					hash: md5(html),
 					handler: () => {
-						this.zhihuPostExistingArticle(html, articleId, title, column, titleImage);
+						this.zhihuPostExistingArticle(html, articleId, title, column, titleImage, draft);
 						this.eventService.destroyEvent(md5(html));
 					}
 				})) this.promptSameContentWarn()
@@ -223,7 +223,7 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 					date: new Date(),
 					hash: md5(html + title),
 					handler: () => {
-						this.zhihuPostNewArticle(html, title, column, titleImage);
+						this.zhihuPostNewArticle(html, title, column, titleImage, draft);
 						this.eventService.destroyEvent(md5(html + title));
 					}
 				})) this.promptSameContentWarn()
@@ -337,7 +337,7 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 		})
 	}
 
-	public async zhihuPostNewArticle(content: string, title: string, column?: IColumn, titleImage?: string) {
+	public async zhihuPostNewArticle(content: string, title: string, column?: IColumn, titleImage?: string, draft: boolean = false) {
 		const postResp: ITarget = await sendRequest({
 			uri: `${ZhuanlanAPI}/drafts`,
 			json: true,
@@ -355,7 +355,7 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 			}
 		})
 
-		await sendRequest({
+		let resp = await sendRequest({
 			uri: `${ZhuanlanAPI}/${postResp.id}/draft`,
 			json: true,
 			method: 'patch',
@@ -368,7 +368,13 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 			headers: {}
 		})
 
-		const resp = await sendRequest({
+		if (draft) {
+			this.addMeta(vscode.window.activeTextEditor, "zhihu-url", `${ZhuanlanURL}${postResp.id}`);
+			this.promptSuccessMsg(`${ZhuanlanURL}${postResp.id}/edit`, `Draft: ${title}`)
+			return resp;
+		}
+
+		resp = await sendRequest({
 			uri: `${ZhuanlanAPI}/${postResp.id}/publish`,
 			json: true,
 			method: 'put',
@@ -385,8 +391,8 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 		return resp;
 	}
 
-	public async zhihuPostExistingArticle(content: string, articleId: string, title: string, column?: IColumn, titleImage?: string) {
-		await sendRequest({
+	public async zhihuPostExistingArticle(content: string, articleId: string, title: string, column?: IColumn, titleImage?: string, draft: boolean = false) {
+		let resp = await sendRequest({
 			uri: `${ZhuanlanAPI}/${articleId}/draft`,
 			json: true,
 			method: 'patch',
@@ -399,7 +405,12 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 			headers: {}
 		})
 
-		const resp = await sendRequest({
+		if (draft) {
+			this.promptSuccessMsg(`${ZhuanlanURL}${articleId}/edit`, `Draft: ${title}`)
+			return resp;
+		}
+
+		resp = await sendRequest({
 			uri: `${ZhuanlanAPI}/${articleId}/publish`,
 			json: true,
 			method: 'put',

@@ -14,7 +14,11 @@
 		"知乎专栏",
 		"writing",
 		"知乎",
-		"Markdown"
+		"Markdown",
+		"wpls",
+		"wpl/s",
+		"wpl",
+		"写作"
 	],
 	"categories": [
 		"Notebooks"
@@ -25,6 +29,7 @@
 		"onCommand:zhihu.refreshCollection",
 		"onCommand:zhihu.openWebView",
 		"onCommand:zhihu.publish",
+		"onCommand:zhihu.drafts",
 		"onCommand:zhihu.jianshuPublish",
 		"onCommand:zhihu.search",
 		"onCommand:zhihu.login",
@@ -76,16 +81,16 @@
 				"command": "zhihu.refreshFeed",
 				"title": "Zhihu: Refresh Feed",
 				"icon": {
-					"light": "res/media/light/refresh.svg",
-					"dark": "res/media/dark/refresh.svg"
+					"light": "res/media/light/refresh_black_24dp.svg",
+					"dark": "res/media/dark/refresh_white_24dp.svg"
 				}
 			},
 			{
 				"command": "zhihu.refreshHotstories",
 				"title": "Zhihu: Refresh HotStories",
 				"icon": {
-					"light": "res/media/light/refresh.svg",
-					"dark": "res/media/dark/refresh.svg"
+					"light": "res/media/light/refresh_black_24dp.svg",
+					"dark": "res/media/dark/refresh_white_24dp.svg"
 				}
 			},
 			{
@@ -96,8 +101,8 @@
 				"command": "zhihu.refreshCollection",
 				"title": "Zhihu: Refresh Collection",
 				"icon": {
-					"light": "res/media/light/refresh.svg",
-					"dark": "res/media/dark/refresh.svg"
+					"light": "res/media/light/refresh_black_24dp.svg",
+					"dark": "res/media/dark/refresh_write_24dp.svg"
 				}
 			},
 			{
@@ -112,16 +117,24 @@
 				"command": "zhihu.search",
 				"title": "Zhihu: Search Items",
 				"icon": {
-					"light": "res/media/light/search.svg",
-					"dark": "res/media/dark/search.svg"
+					"light": "res/media/light/search_black_24dp.svg",
+					"dark": "res/media/dark/search_white_24dp.svg"
 				}
 			},
 			{
 				"command": "zhihu.publish",
 				"title": "Zhihu: Publish",
 				"icon": {
-					"light": "res/media/light/publish.svg",
-					"dark": "res/media/dark/publish.svg"
+					"light": "res/media/light/publish_black_24dp.svg",
+					"dark": "res/media/dark/publish_white_24dp.svg"
+				}
+			},
+			{
+				"command": "zhihu.drafts",
+				"title": "Zhihu: drafts",
+				"icon": {
+					"light": "res/media/light/drafts_black_24dp.svg",
+					"dark": "res/media/dark/drafts_white_24dp.svg"
 				}
 			},
 			{
@@ -168,8 +181,8 @@
 				"command": "zhihu.login",
 				"title": "Zhihu: Login",
 				"icon": {
-					"light": "res/media/light/login.svg",
-					"dark": "res/media/dark/login.svg"
+					"light": "res/media/light/login_black_24dp.svg",
+					"dark": "res/media/dark/login_white_24dp.svg"
 				}
 			},
 			{
@@ -228,6 +241,11 @@
 					"command": "zhihu.publish",
 					"when": "resourceLangId == markdown",
 					"group": "navigation@0"
+				},
+				{
+					"command": "zhihu.drafts",
+					"when": "resourceLangId == markdown",
+					"group": "navigation@1"
 				}
 			],
 			"explorer/context": [
