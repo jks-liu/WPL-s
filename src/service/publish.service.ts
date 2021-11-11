@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { MediaTypes, SettingEnum } from "../const/ENUM";
 import { ArticlePathReg, QuestionAnswerPathReg, QuestionPathReg } from "../const/REG";
-import { AnswerAPI, AnswerURL, QuestionAPI, ZhuanlanAPI, ZhuanlanURL } from "../const/URL";
+import { AnswerAPI, AnswerURL, QuestionAPI, QuestionURL, ZhuanlanAPI, ZhuanlanURL } from "../const/URL";
 import { PostAnswer } from "../model/publish/answer.model";
 import { IColumn } from "../model/publish/column.model";
 import { IProfile, ITarget } from "../model/target/target";
@@ -119,6 +119,15 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 		})
 	}
 
+	private async getQuestionIdOfAnswer(url: string): Promise<string> {	
+		return sendRequest({
+			uri: url,
+			method: 'get',
+			resolveWithFullResponse: true,
+			headers: {},
+		}).then(resp => resp.request.href.match(/(\/question\/(\d+))?\/answer\/(\d+)$/i)[2]);
+	}
+
 
 	async publish(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, draft: boolean) {	
 		const html = await this.renderZhihuMarkdown(textEditor);
@@ -144,15 +153,21 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 			// just publish answer in terms of what shebang indicates
 			if (QuestionAnswerPathReg.test(url.pathname)) {
 				// Link like https://www.zhihu.com/question/481576477/answer/2085827970
+				// or https://www.zhihu.com/answer/2085827970
 				// answer link, update answer
 				const answerId = url.pathname.replace(QuestionAnswerPathReg, '$3');
+				let questionId = url.pathname.replace(QuestionAnswerPathReg, '$2');
+				if (questionId === "") {
+					questionId = await this.getQuestionIdOfAnswer(url.href);
+				}
+				console.log('questionId', questionId, 'answerId', answerId);
 				if (!this.eventService.registerEvent({
 					content: html,
 					type: MediaTypes.article,
 					date: new Date(),
 					hash: md5(html),
 					handler: () => {
-						this.zhihuPostExistingAnswer(html, answerId);
+						this.zhihuPostExistingAnswer(html, questionId, answerId, draft);
 						this.eventService.destroyEvent(md5(html));
 					}
 				})) this.promptSameContentWarn()
@@ -166,7 +181,7 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 					date: new Date(),
 					hash: md5(html),
 					handler: () => {
-						this.zhihuPostNewAnswer(html, questionId);
+						this.zhihuPostNewAnswer(html, questionId, draft);
 						this.eventService.destroyEvent(md5(html));
 					}
 				})) this.promptSameContentWarn()
@@ -243,7 +258,7 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 					date: new Date(),
 					hash: md5(html),
 					handler: () => {
-						this.zhihuPostNewAnswer(html, selectedTarget.id);
+						this.zhihuPostNewAnswer(html, selectedTarget.id, draft);
 						this.eventService.destroyEvent(md5(html));
 					}
 				})) this.promptSameContentWarn();
@@ -286,9 +301,12 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 		).then(item => item.value);
 	}
 
-	public zhihuPostExistingAnswer(html: string, answerId: string) {
+	public zhihuPostExistingAnswer(html: string, questionId:string,  answerId: string, draft: boolean) {
+		// No matter draft or not, new answer use post, existing answer use put
+		const url = draft ? `${QuestionAPI}/${questionId}/draft` : `${AnswerAPI}/${answerId}`
+
 		sendRequest({
-			uri: `${AnswerAPI}/${answerId}`,
+			uri: url,
 			method: 'put',
 			body: {
 				content: html,
@@ -299,23 +317,31 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 			headers: {},
 		}).then(resp => {
 			if (resp.statusCode === 200) {
-				const newUrl = `${AnswerURL}/${answerId}`;
-				this.promptSuccessMsg(newUrl);
-				const pane = vscode.window.createWebviewPanel('zhihu', 'zhihu', vscode.ViewColumn.One, { enableScripts: true, enableCommandUris: true, enableFindWidget: true });
-				sendRequest({ uri: `${AnswerURL}/${answerId}`, gzip: true }).then(
-					resp => {
-						pane.webview.html = resp
-					}
-				);
+				if (draft) {
+					const newUrl = `${AnswerURL}/${answerId}#draft`;
+					this.promptSuccessMsg(newUrl);
+				} else {
+					const newUrl = `${AnswerURL}/${answerId}`;
+					this.promptSuccessMsg(newUrl);
+					const pane = vscode.window.createWebviewPanel('zhihu', 'zhihu', vscode.ViewColumn.One, { enableScripts: true, enableCommandUris: true, enableFindWidget: true });
+					sendRequest({ uri: `${AnswerURL}/${answerId}`, gzip: true }).then(
+						resp => {
+							pane.webview.html = resp
+						}
+					);
+				}
 			} else {
 				vscode.window.showWarningMessage(`发布失败！错误代码 ${resp.statusCode}`)
 			}
 		})
 	}
 
-	public zhihuPostNewAnswer(html: string, questionId: string) {
+	public zhihuPostNewAnswer(html: string, questionId: string, draft: boolean) {
+		// No matter draft or not, new answer use post, existing answer use put
+		const url = draft ? `${QuestionAPI}/${questionId}/draft` : `${QuestionAPI}/${questionId}/answers`
+
 		sendRequest({
-			uri: `${QuestionAPI}/${questionId}/answers`,
+			uri: url,
 			method: 'post',
 			body: new PostAnswer(html),
 			json: true,
@@ -323,9 +349,14 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 			headers: {}
 		}).then(resp => {
 			if (resp.statusCode == 200) {
-				const newUrl = `${AnswerURL}/${resp.body.id}`;
-				this.addMeta(vscode.window.activeTextEditor, "zhihu-url", newUrl);
-				this.promptSuccessMsg(newUrl);
+				if (draft) {
+					const newUrl = `${QuestionURL}/${questionId}#draft`;
+					this.promptSuccessMsg(newUrl);
+				} else {
+					const newUrl = `${AnswerURL}/${resp.body.id}`;
+					this.addMeta(vscode.window.activeTextEditor, "zhihu-url", newUrl);
+					this.promptSuccessMsg(newUrl);
+				}
 			} else {
 				if (resp.statusCode == 400 || resp.statusCode == 403) {
 					vscode.window.showWarningMessage(`发布失败，你已经在该问题下发布过答案，请将头部链接更改为\

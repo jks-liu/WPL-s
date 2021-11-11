@@ -1,5 +1,5 @@
 ---
-title: WPL/s v1.4.0发布 - 支持草稿 - 让你在 VS Code 中编写发布知乎文章及回答问题
+title: WPL/s v1.4.1发布 - 支持回答草稿 - 让你在 VS Code 中编写发布知乎文章及回答问题
 zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 ---
 
