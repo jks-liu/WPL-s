@@ -147,6 +147,7 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 			titleImage = await this.pasteService.uploadImageFromLink(titleImage);
 			console.log('titleImage', titleImage);
 		}
+		const articleTags: string[] = meta['zhihu-tags'] ? meta['zhihu-tags'].split(',').map((x: string)=>x.trim()) : [];
 
 		/// Post article
 		if (url !== undefined) { // If url is provided
@@ -205,7 +206,7 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 					title: title,
 					hash: md5(html),
 					handler: () => {
-						this.zhihuPostExistingArticle(html, articleId, title, column, titleImage, draft);
+						this.zhihuPostExistingArticle(html, articleId, title, articleTags, column, titleImage, draft);
 						this.eventService.destroyEvent(md5(html));
 					}
 				})) this.promptSameContentWarn()
@@ -422,7 +423,8 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 		return resp;
 	}
 
-	public async zhihuPostExistingArticle(content: string, articleId: string, title: string, column?: IColumn, titleImage?: string, draft: boolean = false) {
+	public async zhihuPostExistingArticle(content: string, articleId: string, title: string, tags: string[],
+			column?: IColumn, titleImage?: string, draft: boolean = false) {
 		let resp = await sendRequest({
 			uri: `${ZhuanlanAPI}/${articleId}/draft`,
 			json: true,
