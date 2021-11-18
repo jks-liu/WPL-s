@@ -164,6 +164,49 @@ content: <h2>Markdown 测试专用</h2><p>#! https://zhuanlan.zhihu.com/p/101553
 }
 ```
 
+get https://zhuanlan.zhihu.com/api/autocomplete/topics?token=a&max_matches=5&use_similar=0&topic_filter=1
+
+```json
+[
+  {
+    "introduction": "",
+    "avatar_url": "https://pica.zhimg.com/80/c02c1ee9f_l.jpg?source=4e949a73",
+    "name": "4A \u5e7f\u544a\u516c\u53f8",
+    "url": "https://www.zhihu.com/topic/19586973",
+    "type": "topic",
+    "excerpt": "",
+    "id": "19586973"
+  },
+  {
+    "introduction": "",
+    "avatar_url": "https://pic1.zhimg.com/80/281aa82e7b9bf232dfbf1b3a9cf6d909_l.jpg?source=4e949a73",
+    "name": "A \u80a1\u5927\u8dcc",
+    "url": "https://www.zhihu.com/topic/20013362",
+    "type": "topic",
+    "excerpt": "",
+    "id": "20013362"
+  },
+  {
+    "introduction": "",
+    "avatar_url": "https://pica.zhimg.com/80/v2-349955d95b18302d02a48c590955b61c_l.jpg?source=4e949a73",
+    "name": "Sony A7",
+    "url": "https://www.zhihu.com/topic/20014872",
+    "type": "topic",
+    "excerpt": "",
+    "id": "20014872"
+  },
+  {
+    "introduction": "",
+    "avatar_url": "https://pic3.zhimg.com/80/v2-fa472d5ad9a7df0e6f5ac737c14f32ce_l.jpg?source=4e949a73",
+    "name": "\u5965\u8feaA3",
+    "url": "https://www.zhihu.com/topic/20008717",
+    "type": "topic",
+    "excerpt": "",
+    "id": "20008717"
+  }
+]
+```
+
 添加标签 POST `https://zhuanlan.zhihu.com/api/articles/101553734/topics`
 
 ```json

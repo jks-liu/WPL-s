@@ -43,7 +43,7 @@ export class PublishService {
 		const events = this.eventService.getEvents();
 		events.forEach(e => {
 			e.timeoutId = setTimeout(() => {
-				this.zhihuPostNewArticle(e.content, e.title);
+				this.zhihuPostNewArticle(e.content, e.title, []); // FIXME: tags
 				this.eventService.destroyEvent(e.hash);
 			}, e.date.getTime() - Date.now());
 		})
@@ -239,7 +239,7 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 					date: new Date(),
 					hash: md5(html + title),
 					handler: () => {
-						this.zhihuPostNewArticle(html, title, column, titleImage, draft);
+						this.zhihuPostNewArticle(html, title, articleTags, column, titleImage, draft);
 						this.eventService.destroyEvent(md5(html + title));
 					}
 				})) this.promptSameContentWarn()
@@ -369,7 +369,58 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 		})
 	}
 
-	public async zhihuPostNewArticle(content: string, title: string, column?: IColumn, titleImage?: string, draft: boolean = false) {
+	private async zhihuArticleUpdateTags(articleId: string, tags: string[]) {
+		// 1. Get topics (i.e. tags)
+		const resp = await sendRequest({
+			uri: `${ZhuanlanAPI}/${articleId}/draft`,
+			json: true,
+			method: 'get',
+			headers: {}
+		})
+		const currentTopics = resp.topics;
+		console.log("Current topics: ", currentTopics.map(t => t.name));
+		
+		// 2. Delete topics which are not in the new tags
+		await Promise.all(currentTopics.map(async topic => {
+			if (!tags.map(x => x.toLowerCase()).includes(topic.name.toLowerCase())) {
+				await sendRequest({
+					uri: `${ZhuanlanAPI}/${articleId}/topics/${topic.id}`,
+					method: 'delete',
+					headers: {}
+				})
+				console.log(`Deleted topic ${topic.name}`);
+			}
+		}))
+
+		// 3. Add new topics
+		await Promise.all(tags.map(async tag => {
+			if (!currentTopics.find(t => t.name.toLowerCase() == tag.toLowerCase())) {
+				// 3.1 get info of tag
+				const topicResp = await sendRequest({
+					uri: `https://zhuanlan.zhihu.com/api/autocomplete/topics?token=${encodeURI(tag)}&max_matches=2&use_similar=0&topic_filter=1`,
+					json: true,
+					method: 'get',
+					headers: {},
+				})
+				if (topicResp.length>0 && topicResp[0].name.toLowerCase() == tag.toLowerCase()) {
+					// 3.2 add tag
+					await sendRequest({
+						uri: `${ZhuanlanAPI}/${articleId}/topics`,
+						method: 'post',
+						body: topicResp[0],
+						headers: {},
+						json: true
+					})
+					console.log(`Added topic ${tag}`);
+				} else {
+					console.log(`Cannot find topic ${tag}`);
+				}
+			}
+		}))
+	}
+
+	public async zhihuPostNewArticle(content: string, title: string, tags: string[],
+		column?: IColumn, titleImage?: string, draft: boolean = false) {
 		const postResp: ITarget = await sendRequest({
 			uri: `${ZhuanlanAPI}/drafts`,
 			json: true,
@@ -400,6 +451,8 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 			headers: {}
 		})
 
+		this.zhihuArticleUpdateTags(`${postResp.id}`, tags);
+
 		if (draft) {
 			this.addMeta(vscode.window.activeTextEditor, "zhihu-url", `${ZhuanlanURL}${postResp.id}`);
 			this.promptSuccessMsg(`${ZhuanlanURL}${postResp.id}/edit`, `Draft: ${title}`)
@@ -425,6 +478,8 @@ zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行�
 
 	public async zhihuPostExistingArticle(content: string, articleId: string, title: string, tags: string[],
 			column?: IColumn, titleImage?: string, draft: boolean = false) {
+		this.zhihuArticleUpdateTags(articleId, tags);
+
 		let resp = await sendRequest({
 			uri: `${ZhuanlanAPI}/${articleId}/draft`,
 			json: true,
