@@ -2,7 +2,7 @@
 	"name": "wpls",
 	"displayName": "WPL/s - Zhihu Write Publish Loop w/ statistic",
 	"description": "使用 Markdown 在 VS Code 中进行知乎创作（回答问题，写专栏文章）",
-	"version": "1.4.1",
+	"version": "1.5.0",
 	"publisher": "jks-liu",
 	"license": "MIT",
 	"enableProposedApi": false,

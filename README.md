@@ -1,7 +1,12 @@
 ---
-title: WPL/s v1.4.1发布 - 支持回答草稿 - 让你在 VS Code 中编写发布知乎文章及回答问题
+title: WPL/s v1.5.0发布 - 支持标签 - 让你在 VS Code 中编写发布知乎文章及回答问题
 zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 ---
+
+在元数据总：
+```
+zhihu-tags: tag1, tag 2, tag-3, 标签4
+```
 
 
 # WPL/s - 让你在VS Code中编写发布知乎文章及回答问题
@@ -61,7 +66,7 @@ zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 | 视频 | :x: |
 | 好物推荐 | :x: |
 | 附件 | :x: |
-| 标签 | :x: *0 |
+| 标签 | :heavy_check_mark: *7 |
 | 草稿 | :heavy_check_mark: *9|
 | 赞赏 | :x: |
 | 追更 | :x: |
@@ -92,6 +97,7 @@ zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 title: 请输入标题（若是回答的话，请删除本行）
 zhihu-url: 请输入知乎链接（删除本行发表新的知乎专栏文章）
 zhihu-title-image: 请输入专栏文章题图（若无需题图，删除本行）
+zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知乎已经存在的标签才能添加成功
 注意: 所有的冒号是半角冒号，冒号后面有一个半角空格
 ---
 ```
