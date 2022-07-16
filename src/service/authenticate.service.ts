@@ -249,6 +249,7 @@ export class AuthenticateService {
 		});
 		let qrcode = await sendRequest({
 			uri: `${QRCodeAPI}/${resp.token}/image`,
+			gzip: true,
 			encoding: null
 		});
 		fs.writeFileSync(path.join(getExtensionPath(), 'qrcode.png'), qrcode);
