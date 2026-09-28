@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import { runTests } from "vscode-test";
+import { runTests } from "@vscode/test-electron";
 
 /**
  * run test
@@ -16,8 +16,12 @@ async function main() {
         const extensionTestsPath: string = path.resolve( __dirname, "./suite/index" );
 
         // Download VS Code, unzip it and run the integration test
-        await runTests( { extensionDevelopmentPath, extensionTestsPath } );
+        await runTests( {
+            extensionDevelopmentPath,
+            extensionTestsPath,
+        } );
     } catch ( err ) {
+        console.error(err);
         process.exit(1);
     }
 }

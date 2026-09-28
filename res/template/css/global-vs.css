@@ -46,7 +46,7 @@ body.vscode-dark > .container {
     box-shadow: 0px 0px 6px rgba(253, 250, 250, 0.1);
 }
 
-button#favorite, button#share, button#open {
+button#share, button#open {
     float: right;
     margin-right: 20px;
     min-width: 0;
@@ -61,24 +61,8 @@ button#favorite, button#share, button#open {
     border-radius: 50%;
 }
 
-img.qrcode {
-    margin: 0 auto;
-    width: 200px;
-    /* margin-top: 180px; */
-    box-shadow: 0px 0px 9px rgba(76, 49, 40, 1);
-}
-
-.qr-container {
-    margin: 0 auto;
-    text-align: center;
-}
-
 li {
     margin-top: 16px;
-}
-
-svg.Zi.Zi--Star.Button-zi {
-    vertical-align: bottom;
 }
 
 a.internal, a.external {
@@ -126,11 +110,6 @@ img.avatar-img {
 svg.Zi.Zi--Share.Button-zi {
     fill: #0084ff;
     margin-top: 2px;
-}
-
-svg.Zi.Zi--Star.Button-zi {
-    vertical-align: bottom;
-    fill: #0084ff;
 }
 
 svg.Zi.Zi--LabelSpecial {

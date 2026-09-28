@@ -1,4 +1,4 @@
-var UNESCAPE_MD_RE = /\\([!"#$%&'()*+,\-.\/:;<=>?@[\\\]^_`{|}~])/g;
+var UNESCAPE_MD_RE = /\\([!"#$%&'()*+,-./:;<=>?@[\\\]^_`{|}~])/g;
 
 var HTML_ESCAPE_TEST_RE = /[&<>"]/;
 var HTML_ESCAPE_REPLACE_RE = /[&<>"]/g;

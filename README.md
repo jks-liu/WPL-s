@@ -1,8 +1,7 @@
 ---
-title: WPL/s v1.5.1发布 - 支持标签 - 让你在 VS Code 中编写发布知乎文章及回答问题
+title: WPL/s - 使用专属浏览器登录并在 VS Code 中创作知乎内容
 zhihu-title-image: ./res/media/vs-code-extension-search-zhihu-this.png
 zhihu-tags: Markdown 编辑器, Markdown, Visual Studio Code
-zhihu-url: https://zhuanlan.zhihu.com/p/435836671
 ---
 
 在元数据中：
@@ -73,8 +72,6 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4
 | 赞赏 | :x: |
 | 追更 | :x: |
 
-（0）打算近期支持，star，点赞，收藏，一键三连给我动力呀
-
 1. 最多可支持 4 级标题
 2. 表格暂时不支持对齐
 3. 知乎本身不支持，请大家踊跃向[知乎小管家](https://www.zhihu.com/people/zhihuadmin)提建议
@@ -133,10 +130,16 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 # 使用方法
 
 ## 登录
-点击左上角![登录按钮](res/media/light/outline_login_black_24dp.png)，用知乎扫描二维码。
+点击左侧知乎图标，在“快捷操作”中选择“登录知乎”，也可以通过命令面板执行 `Zhihu: Login`。插件会打开一个使用独立 Profile 的 Chrome 或 Edge 窗口；请在其中正常完成知乎的扫码、验证码或其他登录步骤。验证成功后窗口会自动关闭，登录 Cookie 会保存在 VS Code 的加密 SecretStorage 中，并用于后续发布请求。
+
+需要 VS Code 1.134 或更高版本。插件不会读取日常浏览器 Profile，也不需要手动复制 Cookie。默认在 Windows 上依次尝试 Edge、Chrome，在 macOS/Linux 上依次尝试 Chrome、Edge。可以通过 `zhihu.browserChannel` 选择浏览器，或用 `zhihu.browserExecutablePath` 指定 Chrome/Chromium/Edge 的可执行文件。该登录方式仅支持本地桌面版 VS Code。
+
+执行 `Zhihu: Logout` 会同时删除 SecretStorage 中的 Cookie 和插件专属浏览器 Profile。
 
 ## 发布文章
 点击右上角![发布按钮](res/media/light/outline_publish_black_24dp.png)。
+
+发布回答时，在 Markdown 元数据中填写目标问题的 `zhihu-url`。不填写链接时将创建新文章。
 
 ## 保存草稿
 点击右上角![草稿按钮](res/media/light/outline_drafts_black_24dp.png)。

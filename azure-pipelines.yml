@@ -6,11 +6,11 @@ pr:
 strategy:
   matrix:
     linux:
-      imageName: 'ubuntu-16.04'
+      imageName: 'ubuntu-latest'
     mac:
-      imageName: 'macos-10.14'
+      imageName: 'macos-latest'
     windows:
-      imageName: 'vs2017-win2016'
+      imageName: 'windows-latest'
 
 pool:
   vmImage: $(imageName)
@@ -19,7 +19,7 @@ steps:
 
 - task: NodeTool@0
   inputs:
-    versionSpec: '8.x'
+    versionSpec: '22.x'
   displayName: 'Install Node.js'
 
 - bash: |
@@ -29,8 +29,27 @@ steps:
   condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'))
 
 - bash: |
-    echo ">>> run tests"
-    npm install && npm test
-  displayName: Run Tests
+    npm ci
+  displayName: Install dependencies
+
+- bash: npm run lint
+  displayName: Lint
+
+- bash: npm test
+  displayName: Test on current stable VS Code
   env:
     DISPLAY: ':99.0'
+
+- bash: npm run package
+  displayName: Build production bundle
+
+- bash: npm run vsix -- --out wpls-ci.vsix
+  displayName: Build VSIX
+  condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'))
+
+- task: PublishPipelineArtifact@1
+  displayName: Publish VSIX artifact
+  condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'))
+  inputs:
+    targetPath: '$(System.DefaultWorkingDirectory)/wpls-ci.vsix'
+    artifact: 'wpls-vsix'

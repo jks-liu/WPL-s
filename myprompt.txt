@@ -1,0 +1,97 @@
+- 更新所有的依赖
+- 原始登录zhihu.com使用的是逆向接口，现已不可用，改为使用浏览器cookie登录
+    * 若可以直接获取浏览器cookie，就直接获取
+    * 若不可以，请引导用户复制粘贴
+    * 原有逆向接口及相关不再使用的代码全部删除
+
+2026年8月23日
+
+- 我的插件功能是在zhihu.com上发布文章，我想使用cookie登录，但我觉得直接从浏览器获取不太现实。
+我以前写过一个tauri软件，其直接在webview中打开zhihu的网页让用户登录，然后直接使用此登录（通过保存cookie的方式，当然这里不一定要使用一样的方式，只要能实现功能就行）。请问vscode插件可以实现这样的功能吗。
+
+- 此项目clone自https://github.com/niudai/VSCode-Zhihu，其本来使用的是什么技术方案？注：此方案本来是好用的，但后来zhihu改了登录流程就废了，但方案应该还可行。
+
+- 好的就按你说的改成如下方案：
+用 Playwright 启动插件专属浏览器让用户登录 → 从该上下文取得 Cookie → 交给目前的 CookieService → 继续沿用现有发布接口。
+- 原有逆向接口及相关不再使用的代码全部删除
+- 工作区我已修改的代码也可以直接修改，该删除的就删除，也无需考虑什么向前兼容
+- 依赖什么的能更新的就更新，能删除的就删除，需要加就加
+
+2026年9月27日
+
+- Extension host did not start in 10 seconds, it might be stopped on the first line and needs a debugger to continue.
+- 将“推荐”，“热榜”和“收藏”的功能都删除吧
+
+扩展无法加载
+```
+Activating task providers all
+Error: the description can't be converted into a problem matcher:
+{
+    "base": "$ts-webpack-watch",
+    "background": {
+        "activeOnStart": true,
+        "beginsPattern": "webpack is watching the files…",
+        "endsPattern": "^Built at: .* [AP]M"
+    }
+}
+```
+extension log在.tmp\260927.1-extension host.log
+话说你自己无法执行并查看log吗？
+我的意思是你自己没法执行debug流程并查看extension host日志吗？
+上面.tmp的log是我手工复制的。
+
+本次日志已复制.tmp\260927.1-extension host.log
+
+有login命令，因为最左侧的扩展图标不见了，所以我以为扩展加载失败。为什么图标不见了？
+保留图标，里面原本有login等命令按钮，这些可没让你删除，不要擅作主张
+
+Extension host did not start in 10 seconds, it might be stopped on the first line and needs a debugger to continue.
+command 'zhihu.login' not found
+会显示1.7.0.md的preview，但一直在加载
+
+已登录状态应该显示用户名，并隐藏login按钮。未登录状态应该隐藏logout按钮。
+
+2026年9月29日
+
+实现类似如下功能（这是复制其它项目的，不一定非要npm）的version bump脚本
+```
+# 0.1.1 -> 0.1.2 (default)
+npm run version:bump
+
+# Bump and build the Tauri installer/application
+npm run version:bump -- patch --build
+
+# Or choose the release level explicitly
+npm run version:bump -- minor
+npm run version:bump -- major
+
+# Or set an exact version
+npm run version:bump -- 1.0.0
+
+# Explicitly skip the build (the default behavior)
+npm run version:bump -- patch --no-build
+
+# Show the current synchronized version without changing files
+npm run version:bump -- current
+```
+
+将当前如何获取cookie，如何通过cookie发布等等的细节总结成一篇详细、精确、简练的md技术文档放到`docs/`文件夹中。
+
+```
+vsce package
+webpack 5.109.2 compiled with 1 warning in 31614 ms
+ WARNING  This extension consists of 3487 files, out of which 2095 are JavaScript files. For performance reasons, you should bundle your extension: https://aka.ms/vscode-bundle-extension. You should also exclude unnecessary files by adding them to your .vscodeignore: https://aka.ms/vscode-vscodeignore.
+```
+这个warning需要修复吗？
+
+有时刚加载插件时显示
+```
+There is no data provider registered that can provide view data.
+```
+并且插件无响应且所有相关命令不可用。是不是是在进行网络处理？此时是不是该向用户显示点什么，不然用户会很迷惑不知道哪里出问题了。
+
+其它的发布等命令/按钮也加上相关的出错提示，提高用户友好度
+
+
+## TODO
+正在检查登录状态

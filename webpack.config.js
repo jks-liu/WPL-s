@@ -19,17 +19,15 @@ const config = {
     devtoolModuleFilenameTemplate: '../[resource-path]'
   },
   devtool: 'source-map',
-  externals: [{
+  externals: {
     vscode: 'commonjs vscode', // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
+    'playwright-core': 'commonjs playwright-core',
+    'ali-oss': 'commonjs ali-oss',
   },
-  // {
-  //   'uglify-js': 'uglify-js'
-
-  // }
-  ],
   resolve: {
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.js'],
+    extensionAlias: { '.js': ['.ts', '.js'] },
   },
   module: {
     rules: [

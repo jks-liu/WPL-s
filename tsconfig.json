@@ -1,11 +1,15 @@
 {
 	"compilerOptions": {
-		"module": "commonjs",
-		"target": "es6",
+		"module": "Node16",
+		"moduleResolution": "Node16",
+		"target": "ES2022",
 		"outDir": "out",
 		"sourceMap": true,
-		// "esModuleInterop": true, /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */
-		// "strict": true   /* enable all strict type-checking options */
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"strict": false,
+		"types": ["node", "mocha", "vscode"],
+		"lib": ["ES2022", "DOM"]
 	},
 	"include": [
 		"test/**/*",

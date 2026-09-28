@@ -1,158 +1,88 @@
-"use strict";
-
-import * as fs from "fs";
-import * as MarkdownIt from "markdown-it";
-import markdown_it_zhihu from "markdown-it-zhihu-common";
-import * as meta from "markdown-it-meta"; // import meta from "markdown-it-meta"; not working why?
-import * as path from "path";
+import type MarkdownIt from "markdown-it";
 import * as vscode from "vscode";
-import { AccountService } from "./service/account.service";
-import { AuthenticateService } from "./service/authenticate.service";
-import { CollectionService } from "./service/collection.service";
-import { EventService } from "./service/event.service";
-import { HttpService, clearCache } from "./service/http.service";
-import { PasteService } from "./service/paste.service";
-import { PipeService } from "./service/pipe.service";
-import { ProfileService } from "./service/profile.service";
-import { PublishService } from "./service/publish.service";
-import { showReleaseNote } from "./service/release-note.service";
-import { SearchService } from "./service/search.service";
-import { WebviewService } from "./service/webview.service";
-import { CollectionItem, CollectionTreeviewProvider } from "./treeview/collection-treeview-provider";
-import { EventTreeItem, FeedTreeItem, FeedTreeViewProvider } from "./treeview/feed-treeview-provider";
-import { HotStoryTreeViewProvider } from "./treeview/hotstory-treeview-provider";
 import { setContext } from "./global/globa-var";
-import { Output } from "./global/logger";
-import * as CacheManager from "./global/cache"
-import { ZhihuCompletionProvider, AtPeople } from "./lang/completion-provider";
+import { Output, reportOperationError, showOutput } from "./global/logger";
+import type { ExtensionRuntime } from "./runtime";
+import { ActionsTreeviewProvider } from "./treeview/actions-treeview-provider";
 
-export async function activate(context: vscode.ExtensionContext) {
-	Output('Extension Activated')
-	if(!fs.existsSync(path.join(context.extensionPath, './cookie.json'))) {
-		fs.createWriteStream(path.join(context.extensionPath, './cookie.json')).end()
-	}
+export function activate(context: vscode.ExtensionContext) {
 	setContext(context);
-	// Dependency Injection
-	showReleaseNote()
-	const zhihuMdParser = new MarkdownIt({ html: true }).use(markdown_it_zhihu).use(meta);
-	const defualtMdParser = new MarkdownIt();
-	const accountService = new AccountService();
-	const profileService = new ProfileService(accountService);
-	await profileService.fetchProfile();
-	const collectionService = new CollectionService();
-	const hotStoryTreeViewProvider = new HotStoryTreeViewProvider();
-	const collectionTreeViewProvider = new CollectionTreeviewProvider(profileService, collectionService)
-	const webviewService = new WebviewService(collectionService, collectionTreeViewProvider);
-	const eventService = new EventService();
-	const feedTreeViewProvider = new FeedTreeViewProvider(accountService, profileService, eventService);
-	const searchService = new SearchService(webviewService);
-	const authenticateService = new AuthenticateService(profileService, accountService, feedTreeViewProvider, webviewService);
-	const pasteService = new PasteService();
-	const pipeService = new PipeService(pasteService);
-	const publishService = new PublishService(zhihuMdParser, defualtMdParser, webviewService, collectionService, eventService, profileService, pasteService, pipeService);
+	Output("Extension bootstrap activated");
 
+	const actionsProvider = new ActionsTreeviewProvider();
+	let runtimePromise: Promise<ExtensionRuntime> | undefined;
+
+	function initialize(): Promise<ExtensionRuntime> {
+		if (!runtimePromise) {
+			actionsProvider.setLoading();
+			runtimePromise = import("./runtime.js")
+				.then(module => module.createRuntime(context, actionsProvider))
+				.then(runtime => {
+					actionsProvider.setReady();
+					Output("Extension services ready");
+					return runtime;
+				})
+				.catch(error => {
+					runtimePromise = undefined;
+					const message = error instanceof Error ? error.message : String(error);
+					actionsProvider.setError(message);
+					Output(`知乎扩展初始化失败：${error instanceof Error ? error.stack ?? error.message : String(error)}`);
+					void vscode.window.showErrorMessage(`知乎扩展初始化失败：${message}`, "查看日志", "重试")
+						.then(action => {
+							if (action === "查看日志") showOutput();
+							if (action === "重试") void initialize().catch(() => undefined);
+						});
+					throw error;
+				});
+		}
+		return runtimePromise;
+	}
+
+	async function withRuntime<T>(operation: string, action: (runtime: ExtensionRuntime) => T): Promise<T | undefined> {
+		const runtime = await initialize().catch(() => undefined);
+		if (!runtime) return undefined;
+		try {
+			return await action(runtime);
+		} catch (error) {
+			reportOperationError(operation, error);
+			return undefined;
+		}
+	}
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand("zhihu.openWebView", async (object) => {
-			await webviewService.openWebview(object);
-		}
-		));
-	vscode.commands.registerCommand("zhihu.search", async () => 
-		await searchService.getSearchItems()
+		actionsProvider,
+		vscode.window.registerTreeDataProvider("zhihu-actions", actionsProvider),
+		vscode.commands.registerCommand("zhihu.showLog", () => showOutput()),
+		vscode.commands.registerCommand("zhihu.retryInitialization", () => initialize().catch(() => undefined)),
+		vscode.commands.registerCommand("zhihu.openWebView", object => withRuntime("打开知乎内容", runtime => runtime.openWebView(object))),
+		vscode.commands.registerCommand("zhihu.search", () => withRuntime("搜索知乎", runtime => runtime.search())),
+		vscode.commands.registerCommand("zhihu.clearCache", () => withRuntime("清除缓存", runtime => runtime.clearCache())),
+		vscode.commands.registerCommand("zhihu.login", () => withRuntime("登录知乎", runtime => runtime.login())),
+		vscode.commands.registerCommand("zhihu.logout", () => withRuntime("退出知乎", runtime => runtime.logout())),
+		vscode.commands.registerTextEditorCommand("zhihu.publish", (editor, edit) =>
+			withRuntime("发布内容", runtime => runtime.publish(editor, edit, false))),
+		vscode.commands.registerTextEditorCommand("zhihu.drafts", (editor, edit) =>
+			withRuntime("保存草稿", runtime => runtime.publish(editor, edit, true))),
+		vscode.commands.registerCommand("zhihu.uploadImageFromClipboard", () =>
+			withRuntime("上传剪贴板图片", runtime => runtime.uploadImageFromClipboard())),
+		vscode.commands.registerCommand("zhihu.uploadImageFromPath", uri =>
+			withRuntime("上传图片", runtime => runtime.uploadImageFromPath(uri))),
+		vscode.commands.registerCommand("zhihu.uploadImageFromExplorer", () =>
+			withRuntime("上传图片", runtime => runtime.uploadImageFromExplorer())),
+		vscode.commands.registerCommand("zhihu.atPeople", () => withRuntime("查找知乎用户", runtime => runtime.atPeople())),
 	);
-	vscode.commands.registerCommand("zhihu.clearCache", () => {
-		clearCache()
-		CacheManager.clearCache()
-	})
-	vscode.commands.registerCommand("zhihu.login", () => 
-		authenticateService.login()
-	);
-	vscode.commands.registerCommand("zhihu.jianshuLogin", () => {
-		authenticateService.jianshuLogin()
-	});
-	vscode.commands.registerCommand("zhihu.logout", () => 
-		authenticateService.logout()
-	);
-	vscode.window.registerTreeDataProvider(
-		"zhihu-feed",
-		feedTreeViewProvider
-	);
-	vscode.window.registerTreeDataProvider(
-		"zhihu-hotStories",
-		hotStoryTreeViewProvider
-	);
-	vscode.window.registerTreeDataProvider(
-		"zhihu-collection",
-		collectionTreeViewProvider,
-	)
-	vscode.commands.registerTextEditorCommand('zhihu.publish', (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit) => {
-		publishService.publish(textEditor, edit, false);
-	})
-	vscode.commands.registerTextEditorCommand('zhihu.drafts', (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit) => {
-		publishService.publish(textEditor, edit, true);
-	})
-	vscode.commands.registerCommand('zhihu.uploadImageFromClipboard', async () => {
-		pasteService.uploadImageFromClipboard()
-	})
+	void vscode.commands.executeCommand("setContext", "zhihu.authenticated", false);
 
-	vscode.commands.registerCommand('zhihu.uploadImageFromPath', (uri: vscode.Uri) => {
-		pasteService.uploadImageFromPath(uri)
-	})
-
-	vscode.commands.registerCommand('zhihu.uploadImageFromExplorer', () => {
-		pasteService.uploadImageFromExplorer()
-	})
-	vscode.commands.registerCommand("zhihu.refreshFeed", () => {
-		feedTreeViewProvider.refresh();
-	}
-	);
-	vscode.commands.registerCommand("zhihu.refreshHotstories", () => {
-		hotStoryTreeViewProvider.refresh();
-	})
-	vscode.commands.registerCommand("zhihu.refreshCollection", () => {
-		collectionTreeViewProvider.refresh();
-	})
-	vscode.commands.registerCommand("zhihu.atPeople", () => {
-		AtPeople()
-	})
-	context.subscriptions.push(vscode.languages.registerCompletionItemProvider('markdown', new ZhihuCompletionProvider 
-	, '@'));
-
-	vscode.commands.registerCommand(
-		"zhihu.deleteCollectionItem",
-		(node: CollectionItem) => {
-			collectionService.deleteCollectionItem(node.item);
-			collectionTreeViewProvider.refresh(node.parent);
-			vscode.window.showInformationMessage('已从收藏夹移除');
-		}
-	)
-	vscode.commands.registerCommand(
-		"zhihu.deleteEventItem",
-		(node: EventTreeItem) => {
-			eventService.destroyEvent(node.event.hash);
-			vscode.window.showInformationMessage(`已取消发布！`);
-			feedTreeViewProvider.refresh(node.parent);
-		}
-	)
-	vscode.commands.registerCommand(
-		"zhihu.nextPage",
-		(node: FeedTreeItem) => {
-			node.page++;
-			feedTreeViewProvider.refresh(node);
-		}
-	)
-	vscode.commands.registerCommand(
-		"zhihu.previousPage",
-		(node: FeedTreeItem) => {
-			node.page--;
-			feedTreeViewProvider.refresh(node);
-		}
-	)
-
+	// Let the view and commands become available before loading the publishing services.
+	const initializationTimer = setTimeout(() => {
+		void initialize().catch(() => undefined);
+	}, 0);
+	context.subscriptions.push({ dispose: () => clearTimeout(initializationTimer) });
 
 	return {
-        extendMarkdownIt(md: any) {
-            return md.use(require('markdown-it-katex'));
-        }
-    }
+		whenReady: () => initialize(),
+		extendMarkdownIt(md: MarkdownIt) {
+			return md.use(require("@vscode/markdown-it-katex").default);
+		},
+	};
 }

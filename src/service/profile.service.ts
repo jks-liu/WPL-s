@@ -1,27 +1,37 @@
 
 import * as vscode from "vscode";
-import { SelfProfileAPI, ColumnAPI } from "../const/URL";
+import { ColumnAPI } from "../const/URL";
 import { IProfile } from "../model/target/target";
-import { HttpService, sendRequest } from "./http.service";
+import { sendRequest } from "./http.service";
 import { AccountService } from "./account.service";
 import { IColumn } from "../model/publish/column.model";
 
-export class ProfileService {
-	public profile: IProfile;
+export class ProfileService implements vscode.Disposable {
+	public profile: IProfile | undefined;
+	private readonly changeEmitter = new vscode.EventEmitter<IProfile | undefined>();
+	public readonly onDidChangeProfile = this.changeEmitter.event;
 
 	constructor(protected accountService: AccountService) {
 	}
 
-	public async fetchProfile() {
-		if (await this.accountService.isAuthenticated()) {
-			this.profile = await sendRequest({
-				uri: SelfProfileAPI,
-				json: true,
-				gzip: true,
-			});
-		} else {
-			this.profile = undefined;
-		}
+	public async fetchProfile(): Promise<void> {
+		const profile = await this.accountService.fetchProfile();
+		if (profile) this.setProfile(profile);
+		else this.clearProfile();
+	}
+
+	public setProfile(profile: IProfile): void {
+		this.profile = profile;
+		this.changeEmitter.fire(profile);
+	}
+
+	public clearProfile(): void {
+		this.profile = undefined;
+		this.changeEmitter.fire(undefined);
+	}
+
+	public dispose(): void {
+		this.changeEmitter.dispose();
 	}
 
 	get name(): string {
@@ -39,17 +49,18 @@ export class ProfileService {
 
 	async getColumns(): Promise<IColumn[]> {
 		if (this.profile) {
-			return sendRequest({
+			const response = await sendRequest({
 				uri: ColumnAPI(this.profile.url_token),
 				json: true,
-				gzip: true,
 				method: 'get'
-			}).then(resp => {
-				return resp.data.map(element => element.column);
-			})
+			});
+			if (!response || !Array.isArray(response.data)) {
+				throw new Error("无法获取知乎专栏列表，请检查网络或重新登录");
+			}
+			return response.data.map(element => element.column);
 		} else {
 			vscode.window.showWarningMessage('请先登录！');
-			return Promise.resolve(null);
+			return Promise.resolve(undefined);
 		}
 	}
 }

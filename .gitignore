@@ -40,6 +40,8 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
+/out/
+*.vsix
 
 # TypeScript v1 declaration files
 typings/
@@ -52,6 +54,9 @@ typings/
 
 # Optional eslint cache
 .eslintcache
+
+# VS Code extension integration test cache
+.vscode-test/
 
 # Microbundle cache
 .rpt2_cache/
@@ -108,3 +113,4 @@ cookie.json
 qrcode.png
 events.json
 cache.json
+.tmp/

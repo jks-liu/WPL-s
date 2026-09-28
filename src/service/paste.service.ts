@@ -1,8 +1,7 @@
-import * as OSS from "ali-oss";
+import OSS from "ali-oss";
 import * as childProcess from "child_process";
 import * as fs from "fs";
-import * as os from "os";
-import * as md5 from "md5";
+import md5 from "md5";
 import * as path from "path";
 import * as vscode from "vscode";
 import { LegalImageExt } from "../const/ENUM";
@@ -10,7 +9,7 @@ import { ZhihuOSSAgent } from "../const/HTTP";
 import { ShellScriptPath } from "../const/PATH";
 import { ImageHostAPI, ImageUpload } from "../const/URL";
 import { getExtensionPath } from "../global/globa-var";
-import { Output } from "../global/logger";
+import { Output, reportOperationError } from "../global/logger";
 import { IImageUploadToken } from "../model/publish/image.model";
 import { sendRequest } from "./http.service";
 import { getCache, setCache } from "../global/cache";
@@ -31,13 +30,16 @@ export class PasteService {
 	 */
     public uploadImageFromClipboard() {
         const imagePath = path.join(getExtensionPath(), `${Date.now()}.png`);
-        this.saveClipboardImageToFileAndGetPath(imagePath, async () => {
-            await this.uploadImageFromLink(imagePath, true);
-            fs.unlinkSync(imagePath);
+        this.saveClipboardImageToFileAndGetPath(imagePath, () => {
+            void this.uploadImageFromLink(imagePath, true)
+                .catch(error => reportOperationError("上传剪贴板图片", error))
+                .finally(() => {
+                    void fs.promises.unlink(imagePath).catch(error => Output(`删除临时图片失败：${String(error)}`));
+                });
         });
     }
 
-    public async uploadImageFromExplorer(uri?: vscode.Uri) {
+    public async uploadImageFromExplorer() {
         const imageUri = await vscode.window.showOpenDialog({
             canSelectFiles: true,
             canSelectFolders: false,
@@ -50,7 +52,9 @@ export class PasteService {
             return uris ? uris[0] : undefined
                 ;
         });
-        this.uploadImageFromLink(imageUri.fsPath, true);
+        if (imageUri) {
+            await this.uploadImageFromLink(imageUri.fsPath, true);
+        }
     }
 
     /**
@@ -74,7 +78,6 @@ export class PasteService {
             } else {
                 buffer = await sendRequest({
                     uri: link,
-                    gzip: false,
                     encoding: null,
                     enableCache: true
                 });
@@ -117,33 +120,35 @@ export class PasteService {
             headers: {},
             json: true,
             resolveWithFullResponse: true,
-            simple: false,
         };
 
         const prefetchResp = await sendRequest(options);
-        if (prefetchResp.statusCode == 401) {
-            vscode.window.showWarningMessage("登录之后才可上传图片！");
-
-            return;
+        if (!prefetchResp) throw new Error("无法请求知乎图片上传凭据，请检查网络连接");
+        if (prefetchResp.statusCode === 401 || prefetchResp.statusCode === 403) {
+            throw new Error("知乎登录已失效，请重新登录后上传图片");
+        }
+        if (prefetchResp.statusCode >= 300) {
+            throw new Error(`无法获取知乎图片上传凭据（HTTP ${prefetchResp.statusCode}）`);
         }
         const prefetchBody: IImageUploadToken = prefetchResp.body;
+        if (!prefetchBody?.upload_file?.object_key) {
+            throw new Error("知乎图片上传接口返回的数据不完整");
+        }
         const upload_file = prefetchBody.upload_file;
         if (prefetchBody.upload_token) {
             zhihu_agent.options.accessKeyId = prefetchBody.upload_token.access_id;
             zhihu_agent.options.accessKeySecret = prefetchBody.upload_token.access_key;
             zhihu_agent.options.stsToken = prefetchBody.upload_token.access_token;
             const client = new OSS(zhihu_agent.options);
-            console.log(prefetchBody);
             // Object表示上传到OSS的Object名称，localfile表示本地文件或者文件路径
-            const putResp = client.put(upload_file.object_key, buffer);
-            console.log(putResp);
-            putResp.then(r => {
-                if (insert) {
-                    this.insertImageLink(`${prefetchBody.upload_file.object_key}${path.extname(link)}`);
-                }
-            }).catch(e => {
-                Output(`上传图片${link}失败！`, 'warn')
-            })
+            try {
+                await client.put(upload_file.object_key, buffer);
+            } catch (error) {
+                throw new Error(`图片上传到知乎存储失败：${error instanceof Error ? error.message : String(error)}`, { cause: error });
+            }
+            if (insert) {
+                this.insertImageLink(`${prefetchBody.upload_file.object_key}${path.extname(link)}`);
+            }
         } else {
             if (insert) {
                 this.insertImageLink(`v2-${hash}${path.extname(link)}`);
@@ -165,11 +170,11 @@ export class PasteService {
         }
         if (LegalImageExt.includes(path.extname(_path))) {
             if (path.isAbsolute(_path)) {
-                this.uploadImageFromLink(_path, true);
+                await this.uploadImageFromLink(_path, true);
             } else {
                 const workspaceFolders = vscode.workspace.workspaceFolders;
                 if (workspaceFolders) {
-                    this.uploadImageFromLink(path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, _path), true);
+                    await this.uploadImageFromLink(path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, _path), true);
                 } else {
                     vscode.window.showWarningMessage("上传图片前请先打开一个文件夹！");
                 }
@@ -231,10 +236,10 @@ export class PasteService {
             powershell.on("error", function (e: Error) {
                 vscode.window.showErrorMessage(e.message);
             });
-            powershell.on("exit", function (code, signal) {
+            powershell.on("exit", function () {
                 // Console.log('exit', code, signal);
             });
-            powershell.stdout.on("data", function (data: Buffer) {
+            powershell.stdout.on("data", function () {
                 cb();
             });
         } else if (platform === "darwin") {
@@ -245,10 +250,10 @@ export class PasteService {
             ascript.on("error", function (e) {
                 vscode.window.showErrorMessage(e.message);
             });
-            ascript.on("exit", function (code, signal) {
+            ascript.on("exit", function () {
                 // Console.log('exit',code,signal);
             });
-            ascript.stdout.on("data", function (data: Buffer) {
+            ascript.stdout.on("data", function () {
                 cb();
             });
         } else {
@@ -260,7 +265,7 @@ export class PasteService {
             ascript.on("error", function (e) {
                 vscode.window.showErrorMessage(e.message);
             });
-            ascript.on("exit", function (code, signal) {
+            ascript.on("exit", function () {
                 // Console.log('exit',code,signal);
             });
             ascript.stdout.on("data", function (data: Buffer) {

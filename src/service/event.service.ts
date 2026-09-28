@@ -1,7 +1,6 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import * as vscode from "vscode";
 import { MediaTypes } from "../const/ENUM";
 import { EventsPath } from "../const/PATH";
 import { getExtensionPath } from "../global/globa-var";
@@ -66,12 +65,16 @@ export class EventService {
 	}
 
 	registerEvent(e: IEvent) {
-		e.timeoutId = setTimeout(e.handler, e.date.getTime() - Date.now());
-		if(!this.events.find(v => v.hash == e.hash)) {
-			this.events.push(e);
+		if (this.events.some(event => event.hash === e.hash)) return false;
+		this.events.push(e);
+		try {
 			this.persist();
-			return true;
-		} else return false;
+		} catch (error) {
+			this.events = this.events.filter(event => event !== e);
+			throw error;
+		}
+		e.timeoutId = setTimeout(e.handler, e.date.getTime() - Date.now());
+		return true;
 	}
 
 	/**

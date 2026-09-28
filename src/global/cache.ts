@@ -5,7 +5,7 @@ import { getExtensionPath } from "./globa-var";
 let cache = {}
 
 if(!fs.existsSync(path.join(getExtensionPath(), './cache.json'))) {
-    fs.createWriteStream(path.join(getExtensionPath(), './cookie.json')).end()
+    fs.createWriteStream(path.join(getExtensionPath(), './cache.json')).end()
 }
 
 function persist() {

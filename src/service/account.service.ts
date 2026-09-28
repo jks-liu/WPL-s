@@ -1,38 +1,33 @@
-
-import { SelfProfileAPI, SignUpRedirectPage } from "../const/URL";
+import { SelfProfileAPI } from "../const/URL";
 import { IProfile } from "../model/target/target";
-import { sendRequest } from "./http.service";
-
+import { HttpResponse, sendRequest } from "./http.service";
 
 export class AccountService {
-	public profile: IProfile;
+	public profile: IProfile | undefined;
+	private fetchGeneration = 0;
 
-	constructor () {}
-
-	async fetchProfile() {
-		this.profile  = await sendRequest({
+	public async fetchProfile(cookie?: string, signal?: AbortSignal): Promise<IProfile | undefined> {
+		const generation = ++this.fetchGeneration;
+		const response = await sendRequest<IProfile>({
 			uri: SelfProfileAPI,
-			json: true
-		});
-	}
-
-	async isAuthenticated(): Promise<boolean> {
-
-		let checkIfSignedIn;
-		try {
-			checkIfSignedIn = await sendRequest({
-				uri: SignUpRedirectPage,
-				followRedirect: false,
-				followAllRedirects: false,
-				resolveWithFullResponse: true,
-				gzip: true,
-				simple: false
-			});
-		} catch (err) {
-			console.error('Http error', err);
-			return false;
+			json: true,
+			resolveWithFullResponse: true,
+			cookie,
+			signal,
+		}) as HttpResponse<IProfile> | null;
+		const profile = response?.statusCode === 200 && response.body?.id ? response.body : undefined;
+		if (generation === this.fetchGeneration) {
+			this.profile = profile;
 		}
-		return Promise.resolve(checkIfSignedIn ? checkIfSignedIn.statusCode == '302' : false);
+		return profile;
 	}
 
+	public async isAuthenticated(): Promise<boolean> {
+		return Boolean(await this.fetchProfile());
+	}
+
+	public clearProfile(): void {
+		this.fetchGeneration += 1;
+		this.profile = undefined;
+	}
 }

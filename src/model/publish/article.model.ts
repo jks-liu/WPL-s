@@ -1,4 +1,4 @@
-import { ITarget, IAuthorTarget } from "../target/target";
+import { ITarget } from "../target/target";
 import { IColumn } from "./column.model";
 
 export interface IPostArticle {

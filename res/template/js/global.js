@@ -1,4 +1,3 @@
-const favoriteBtn = document.getElementById('favorite');
 const shareBtn = document.getElementById('share');
 const openBtn = document.getElementById('open');
 const upvoteCode = document.getElementById('upvote');
@@ -18,12 +17,6 @@ function articleUpvote(id) {
 	})
 }
 
-favoriteBtn.addEventListener('click', e => {
-	vscode.postMessage({
-		command: 'collect'
-	})
-	console.log('Favorite Btn Clicked');
-})
 shareBtn.addEventListener('click', e => {
 	vscode.postMessage({
 		command: 'share'

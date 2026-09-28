@@ -6,7 +6,7 @@ import { sendRequest } from "../service/http.service";
 
 export class ZhihuCompletionProvider implements vscode.CompletionItemProvider {
 
-    async provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext): Promise<vscode.CompletionItem[] | vscode.CompletionList> {
+    async provideCompletionItems(): Promise<vscode.CompletionItem[]> {
         // var curWord = document.getText(document.getWordRangeAtPosition(position));
         // if (curWord == '@') {
         var item = new vscode.CompletionItem('@ 知乎er？', vscode.CompletionItemKind.Event);
@@ -14,10 +14,6 @@ export class ZhihuCompletionProvider implements vscode.CompletionItemProvider {
         item.insertText = "";
         // list.push(new vscode.Comp('牛岱', vscode.CompletionItemKind.EnumMember));
         return [item];
-    }
-
-    resolveCompletionItem?(item: vscode.CompletionItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CompletionItem> {
-        throw new Error("Method not implemented.");
     }
 
 }
@@ -29,11 +25,12 @@ export async function AtPeople() {
         placeHolder: "",
     });
     if (!keywordString) return;
-    var respArray = (await sendRequest({
+    const response = await sendRequest({
         uri: AtAutoCompleteURL(keywordString),
-        gzip: true,
         json: true
-    }))[0];
+    });
+    if (!response) throw new Error("知乎用户查询失败，请检查网络连接");
+    var respArray = response[0];
     if (!respArray) return;
     // respArray contains item like this:
     /**
@@ -58,17 +55,19 @@ export async function AtPeople() {
     ).then(r => r ? r.user : undefined);
     if (!selectedPeople) return
     const editor = vscode.window.activeTextEditor;
+    if (!editor) throw new Error("请先打开要插入链接的 Markdown 文件");
     const uri = editor.document.uri;
     if (uri.scheme === "untitled") {
         vscode.window.showWarningMessage("请先保存当前编辑文件！");
         return;
     }
-    editor.edit(e => {
+    const edited = await editor.edit(e => {
         const current = editor.selection;
         var range: vscode.Range = new vscode.Range(new vscode.Position(current.start.line, current.start.character-1), current.start);
         e.delete(range);
         e.insert(current.start, `[@${selectedPeople[1]}](https://www.zhihu.com/people/${selectedPeople[2]})`)
     });
+    if (!edited) throw new Error("无法将知乎用户链接插入当前文件");
 
     // Output(selectedPeople, 'info');
     // this.webviewService.openWebview(selectedPeople.object);

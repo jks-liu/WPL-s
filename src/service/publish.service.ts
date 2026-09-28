@@ -5,15 +5,15 @@ import { AnswerAPI, AnswerURL, QuestionAPI, QuestionURL, ZhuanlanAPI, ZhuanlanUR
 import { PostAnswer } from "../model/publish/answer.model";
 import { IColumn } from "../model/publish/column.model";
 import { IProfile, ITarget } from "../model/target/target";
-import { CollectionService, ICollectionItem } from "./collection.service";
 import { EventService } from "./event.service";
 import { sendRequest } from "./http.service";
 import { ProfileService } from "./profile.service";
 import { WebviewService } from "./webview.service";
-import * as MarkdownIt from "markdown-it";
-import md5 = require("md5");
+import MarkdownIt from "markdown-it";
+import md5 from "md5";
 import { PasteService } from "./paste.service";
 import { PipeService } from "./pipe.service";
+import { reportOperationError } from "../global/logger";
 
 enum previewActions {
 	openInBrowser = '去看看'
@@ -26,7 +26,6 @@ export class PublishService {
 		protected zhihuMdParser: MarkdownIt,
 		protected defaultMdParser: MarkdownIt,
 		protected webviewService: WebviewService,
-		protected collectionService: CollectionService,
 		protected eventService: EventService,
 		protected profileService: ProfileService,
 		protected pasteService: PasteService,
@@ -43,21 +42,24 @@ export class PublishService {
 		const events = this.eventService.getEvents();
 		events.forEach(e => {
 			e.timeoutId = setTimeout(() => {
-				this.zhihuPostNewArticle(e.content, e.title, []); // FIXME: tags
-				this.eventService.destroyEvent(e.hash);
+				void this.completeQueuedPublish(e.hash, "恢复发布任务", () =>
+					this.zhihuPostNewArticle(e.content, e.title, [])); // FIXME: tags
 			}, e.date.getTime() - Date.now());
 		})
 	}
 
-	private isZhihuArticle(meta: any): boolean {
-		const url: URL|undefined = meta['zhihu-url'] && new URL(meta['zhihu-url']);
-		if (url === undefined)
-			return true;
-		
-		if (QuestionAnswerPathReg.test(url.pathname) || QuestionPathReg.test(url.pathname))
-			return false;
-
-		return true;
+	private async completeQueuedPublish(hash: string, operation: string, task: () => Promise<unknown>): Promise<void> {
+		try {
+			await task();
+		} catch (error) {
+			reportOperationError(operation, error);
+		} finally {
+			try {
+				this.eventService.destroyEvent(hash);
+			} catch (error) {
+				reportOperationError("更新发布任务记录", error);
+			}
+		}
 	}
 
 	private async renderZhihuMarkdown(textEditor: vscode.TextEditor): Promise<string> {
@@ -76,11 +78,11 @@ export class PublishService {
 			location: vscode.ProgressLocation.Window,
 			cancellable: false,
 			title: '图片上传中...'
-		}, (progress, token) => {
+		}, () => {
 			return Promise.resolve(pipePromise);
 		})
 		await pipePromise;
-		return this.zhihuMdParser.renderer.render(tokens, {}, {}) + "\n" + this.zhihuMdParser.render("\n\n>本文使用 [WPL/s](https://zhuanlan.zhihu.com/p/390528313) 发布 [@GitHub](https://github.com/jks-liu/WPL-s)");
+		return this.zhihuMdParser.renderer.render(tokens, this.zhihuMdParser.options, {}) + "\n" + this.zhihuMdParser.render("\n\n>本文使用 [WPL/s](https://zhuanlan.zhihu.com/p/390528313) 发布 [@GitHub](https://github.com/jks-liu/WPL-s)");
 	}
 
 	private addMeta(textEditor: vscode.TextEditor, key: string, value: string) {
@@ -130,7 +132,7 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 	}
 
 
-	async publish(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, draft: boolean) {	
+	async publish(textEditor: vscode.TextEditor, _edit: vscode.TextEditorEdit, draft: boolean) {
 		const html = await this.renderZhihuMarkdown(textEditor);
 		const meta = (this.zhihuMdParser as any).meta;
 	
@@ -169,8 +171,8 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 					date: new Date(),
 					hash: md5(html),
 					handler: () => {
-						this.zhihuPostExistingAnswer(html, questionId, answerId, draft);
-						this.eventService.destroyEvent(md5(html));
+						return this.completeQueuedPublish(md5(html), draft ? "保存回答草稿" : "发布回答", () =>
+							this.zhihuPostExistingAnswer(html, questionId, answerId, draft));
 					}
 				})) this.promptSameContentWarn()
 			} else if (QuestionPathReg.test(url.pathname)) {
@@ -183,8 +185,8 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 					date: new Date(),
 					hash: md5(html),
 					handler: () => {
-						this.zhihuPostNewAnswer(html, questionId, draft);
-						this.eventService.destroyEvent(md5(html));
+						return this.completeQueuedPublish(md5(html), draft ? "保存回答草稿" : "发布回答", () =>
+							this.zhihuPostNewAnswer(html, questionId, draft));
 					}
 				})) this.promptSameContentWarn()
 			} else if (ArticlePathReg.test(url.pathname)) {
@@ -207,21 +209,12 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 					title: title,
 					hash: md5(html),
 					handler: () => {
-						this.zhihuPostExistingArticle(html, articleId, title, articleTags, column, titleImage, draft);
-						this.eventService.destroyEvent(md5(html));
+						return this.completeQueuedPublish(md5(html), draft ? "保存文章草稿" : "发布文章", () =>
+							this.zhihuPostExistingArticle(html, articleId, title, articleTags, column, titleImage, draft));
 					}
 				})) this.promptSameContentWarn()
 			}
-		} else { // url is not provided
-			const selectFrom: MediaTypes = await vscode.window.showQuickPick<vscode.QuickPickItem & { value: MediaTypes }>(
-				[
-					{ label: '发布新文章', description: '', value: MediaTypes.article },
-					{ label: '从收藏夹中选取', description: '', value: MediaTypes.answer }
-				]
-			).then(item => item.value);
-
-			if (selectFrom === MediaTypes.article) {
-				// user select to publish new article
+		} else { // url is not provided: publish a new article
 				if (!title) {
 					title = await this._getTitle();
 					if (title) {
@@ -240,31 +233,10 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 					date: new Date(),
 					hash: md5(html + title),
 					handler: () => {
-						this.zhihuPostNewArticle(html, title, articleTags, column, titleImage, draft);
-						this.eventService.destroyEvent(md5(html + title));
+						return this.completeQueuedPublish(md5(html + title), draft ? "保存文章草稿" : "发布文章", () =>
+							this.zhihuPostNewArticle(html, title, articleTags, column, titleImage, draft));
 					}
 				})) this.promptSameContentWarn()
-
-			} else if (selectFrom === MediaTypes.answer) {
-				// user select from collection
-				// shebang not found, then prompt a quick pick to select a question from collections
-				const selectedTarget: ICollectionItem | undefined = await vscode.window.showQuickPick<vscode.QuickPickItem & ICollectionItem>(
-					this.collectionService.getTargets(MediaTypes.question).then(
-						(targets) => targets.map(t => ({ label: t.title ? t.title : t.excerpt, description: t.excerpt, id: t.id, type: t.type }))
-					)
-				).then(item => (item ? { id: item.id, type: item.type } : undefined));
-				if (!selectedTarget) return;
-				if (!this.eventService.registerEvent({
-					content: html,
-					type: MediaTypes.article,
-					date: new Date(),
-					hash: md5(html),
-					handler: () => {
-						this.zhihuPostNewAnswer(html, selectedTarget.id, draft);
-						this.eventService.destroyEvent(md5(html));
-					}
-				})) this.promptSameContentWarn();
-			}
 		}
 	}
 
@@ -303,11 +275,11 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 		).then(item => item.value);
 	}
 
-	public zhihuPostExistingAnswer(html: string, questionId:string,  answerId: string, draft: boolean) {
+	public async zhihuPostExistingAnswer(html: string, questionId:string,  answerId: string, draft: boolean): Promise<void> {
 		// No matter draft or not, new answer use post, existing answer use put
 		const url = draft ? `${QuestionAPI}/${questionId}/draft` : `${AnswerAPI}/${answerId}`
 
-		sendRequest({
+		const resp = await sendRequest({
 			uri: url,
 			method: 'put',
 			body: {
@@ -317,57 +289,45 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 			json: true,
 			resolveWithFullResponse: true,
 			headers: {},
-		}).then(resp => {
-			if (resp.statusCode === 200) {
-				if (draft) {
-					const newUrl = `${AnswerURL}/${answerId}#draft`;
-					this.promptSuccessMsg(newUrl);
-				} else {
-					const newUrl = `${AnswerURL}/${answerId}`;
-					this.promptSuccessMsg(newUrl);
-					const pane = vscode.window.createWebviewPanel('zhihu', 'zhihu', vscode.ViewColumn.One, { enableScripts: true, enableCommandUris: true, enableFindWidget: true });
-					sendRequest({ uri: `${AnswerURL}/${answerId}`, gzip: true }).then(
-						resp => {
-							pane.webview.html = resp
-						}
-					);
-				}
-			} else {
-				vscode.window.showWarningMessage(`发布失败！错误代码 ${resp.statusCode}`)
-			}
-		})
+		});
+		if (!resp) throw new Error("回答请求失败，请检查网络连接");
+		if (resp.statusCode !== 200) throw requestStatusError("回答请求", resp.statusCode);
+		if (draft) {
+			this.promptSuccessMsg(`${AnswerURL}/${answerId}#draft`);
+			return;
+		}
+		this.promptSuccessMsg(`${AnswerURL}/${answerId}`);
+		const pane = vscode.window.createWebviewPanel('zhihu', 'zhihu', vscode.ViewColumn.One, { enableScripts: true, enableCommandUris: true, enableFindWidget: true });
+		void sendRequest<string>({ uri: `${AnswerURL}/${answerId}` }).then(content => {
+			if (content) pane.webview.html = content;
+			else reportOperationError("预览已发布回答", new Error("页面加载失败，请检查网络连接"));
+		});
 	}
 
-	public zhihuPostNewAnswer(html: string, questionId: string, draft: boolean) {
+	public async zhihuPostNewAnswer(html: string, questionId: string, draft: boolean): Promise<void> {
 		// No matter draft or not, new answer use post, existing answer use put
 		const url = draft ? `${QuestionAPI}/${questionId}/draft` : `${QuestionAPI}/${questionId}/answers`
 
-		sendRequest({
+		const resp = await sendRequest({
 			uri: url,
 			method: 'post',
 			body: new PostAnswer(html),
 			json: true,
 			resolveWithFullResponse: true,
 			headers: {}
-		}).then(resp => {
-			if (resp.statusCode == 200) {
-				if (draft) {
-					const newUrl = `${QuestionURL}/${questionId}#draft`;
-					this.promptSuccessMsg(newUrl);
-				} else {
-					const newUrl = `${AnswerURL}/${resp.body.id}`;
-					this.addMeta(vscode.window.activeTextEditor, "zhihu-url", newUrl);
-					this.promptSuccessMsg(newUrl);
-				}
-			} else {
-				if (resp.statusCode == 400 || resp.statusCode == 403) {
-					vscode.window.showWarningMessage(`发布失败，你已经在该问题下发布过答案，请将头部链接更改为\
-					已回答的问题下的链接。`)
-				} else {
-					vscode.window.showWarningMessage(`发布失败！错误代码 ${resp.statusCode}`)
-				}
-			}
-		})
+		});
+		if (!resp) throw new Error("回答请求失败，请检查网络连接");
+		if (resp.statusCode === 400 || resp.statusCode === 403) {
+			throw new Error(`回答请求被拒绝（HTTP ${resp.statusCode}）；如果已回答该问题，请在 zhihu-url 中填写已有回答链接`);
+		}
+		if (resp.statusCode !== 200) throw requestStatusError("回答请求", resp.statusCode);
+		if (draft) {
+			this.promptSuccessMsg(`${QuestionURL}/${questionId}#draft`);
+			return;
+		}
+		const newUrl = `${AnswerURL}/${resp.body.id}`;
+		this.addMeta(vscode.window.activeTextEditor, "zhihu-url", newUrl);
+		this.promptSuccessMsg(newUrl);
 	}
 
 	private async zhihuArticleUpdateTags(articleId: string, tags: string[]) {
@@ -378,6 +338,9 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 			method: 'get',
 			headers: {}
 		})
+		if (!resp || !Array.isArray(resp.topics)) {
+			throw new Error("无法读取文章标签，请检查网络或登录状态");
+		}
 		const currentTopics = resp.topics;
 		console.log("Current topics: ", currentTopics.map(t => t.name));
 		
@@ -403,6 +366,7 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 					method: 'get',
 					headers: {},
 				})
+				if (!Array.isArray(topicResp)) throw new Error(`无法查询标签「${tag}」`);
 				if (topicResp.length>0 && topicResp[0].name.toLowerCase() == tag.toLowerCase()) {
 					// 3.2 add tag
 					await sendRequest({
@@ -422,22 +386,23 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 
 	public async zhihuPostNewArticle(content: string, title: string, tags: string[],
 		column?: IColumn, titleImage?: string, draft: boolean = false) {
-		const postResp: ITarget = await sendRequest({
+		const created = await sendRequest<ITarget>({
 			uri: `${ZhuanlanAPI}/drafts`,
 			json: true,
 			method: 'post',
+			resolveWithFullResponse: true,
 			body: { "title": "h", "delta_time": 0 },
 			headers: {
-				'authority': 'zhuanlan.zhihu.com',
-				'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4101.0 Safari/537.36 Edg/83.0.474.0',
 				'origin': 'https://zhuanlan.zhihu.com',
-				'sec-fetch-site': 'same-origin',
-				'sec-fetch-mode': 'cors',
-				'sec-fetch-dest': 'empty',
 				'referer': 'https://zhuanlan.zhihu.com/write',
 				'x-requested-with': 'fetch'
 			}
 		})
+		if (!created) throw new Error("创建文章草稿请求失败，请检查网络连接");
+		if (created.statusCode >= 300 || !created.body?.id) {
+			throw requestStatusError("创建文章草稿", created.statusCode);
+		}
+		const postResp = created.body;
 
 		let resp = await sendRequest({
 			uri: `${ZhuanlanAPI}/${postResp.id}/draft`,
@@ -449,10 +414,14 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 				titleImage,
 				isTitleImageFullScreen: vscode.workspace.getConfiguration('zhihu').get(SettingEnum.isTitleImageFullScreen)
 			},
-			headers: {}
+			headers: {},
+			resolveWithFullResponse: true,
 		})
+		if (!resp) throw new Error("保存文章内容请求失败，请检查网络连接");
+		if (resp.statusCode >= 300) throw requestStatusError("保存文章内容", resp.statusCode);
 
-		this.zhihuArticleUpdateTags(`${postResp.id}`, tags);
+		void this.zhihuArticleUpdateTags(`${postResp.id}`, tags)
+			.catch(error => reportOperationError("更新文章标签", error));
 
 		if (draft) {
 			this.addMeta(vscode.window.activeTextEditor, "zhihu-url", `${ZhuanlanURL}${postResp.id}`);
@@ -468,18 +437,17 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 			headers: {},
 			resolveWithFullResponse: true
 		})
-		if (resp.statusCode < 300) {
-			this.addMeta(vscode.window.activeTextEditor, "zhihu-url", `${ZhuanlanURL}${postResp.id}`);
-			this.promptSuccessMsg(`${ZhuanlanURL}${postResp.id}`, title)
-		} else {
-			vscode.window.showWarningMessage(`文章发布失败，错误代码${resp.statusCode}`)
-		}
+		if (!resp) throw new Error("发布文章请求失败，请检查网络连接");
+		if (resp.statusCode >= 300) throw requestStatusError("发布文章", resp.statusCode);
+		this.addMeta(vscode.window.activeTextEditor, "zhihu-url", `${ZhuanlanURL}${postResp.id}`);
+		this.promptSuccessMsg(`${ZhuanlanURL}${postResp.id}`, title)
 		return resp;
 	}
 
 	public async zhihuPostExistingArticle(content: string, articleId: string, title: string, tags: string[],
 			column?: IColumn, titleImage?: string, draft: boolean = false) {
-		this.zhihuArticleUpdateTags(articleId, tags);
+		void this.zhihuArticleUpdateTags(articleId, tags)
+			.catch(error => reportOperationError("更新文章标签", error));
 
 		let resp = await sendRequest({
 			uri: `${ZhuanlanAPI}/${articleId}/draft`,
@@ -491,8 +459,11 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 				titleImage,
 				isTitleImageFullScreen: vscode.workspace.getConfiguration('zhihu').get(SettingEnum.isTitleImageFullScreen)
 			},
-			headers: {}
+			headers: {},
+			resolveWithFullResponse: true,
 		})
+		if (!resp) throw new Error("保存文章内容请求失败，请检查网络连接");
+		if (resp.statusCode >= 300) throw requestStatusError("保存文章内容", resp.statusCode);
 
 		if (draft) {
 			this.promptSuccessMsg(`${ZhuanlanURL}${articleId}/edit`, `Draft: ${title}`)
@@ -507,11 +478,9 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 			headers: {},
 			resolveWithFullResponse: true
 		})
-		if (resp.statusCode < 300) {
-			this.promptSuccessMsg(`${ZhuanlanURL}${articleId}`, title)
-		} else {
-			vscode.window.showWarningMessage(`文章发布失败，错误代码${resp.statusCode}`)
-		}
+		if (!resp) throw new Error("发布文章请求失败，请检查网络连接");
+		if (resp.statusCode >= 300) throw requestStatusError("发布文章", resp.statusCode);
+		this.promptSuccessMsg(`${ZhuanlanURL}${articleId}`, title)
 		return resp;
 	}
 
@@ -533,4 +502,11 @@ zhihu-tags: tag1, tag 2, tag-3, 标签4, 标签以半角逗号分隔, 只有知�
 		else return undefined;
 		// shebangRegExp = /(https?:\/\/)/i
 	}
+}
+
+function requestStatusError(operation: string, statusCode: number): Error {
+	const hint = statusCode === 401 || statusCode === 403
+		? "，登录可能已失效，请重新登录"
+		: "";
+	return new Error(`${operation}失败（HTTP ${statusCode}${hint}）`);
 }
